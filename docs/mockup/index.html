@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overlook Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  html, body { min-height: 100%; }
+  body {
+    background: radial-gradient(ellipse at 50% 35%, #1d1d21 0%, #0b0b0d 70%);
+    color: #f5f5f7;
+    font-family: "SF Pro Display", -apple-system, system-ui, "Helvetica Neue", sans-serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 20px; padding: 24px 16px; min-height: 100vh; overflow-x: hidden;
+  }
+
+  /* The TV */
+  .tv { width: min(100%, calc((100vh - 190px) * 16 / 9), 1280px); }
+  .bezel { background: #050505; padding: 1.1%; border-radius: 12px;
+           box-shadow: 0 0 0 1px #2b2b2e, 0 40px 90px rgba(0,0,0,.7); }
+  .screen { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 3px; background: #000; }
+  .stand { width: 22%; height: 10px; margin: 0 auto; border-radius: 0 0 6px 6px;
+           background: linear-gradient(#1a1a1c, #0a0a0b); }
+
+  /* The home screen, drawn at the TV's real 1920x1080 and scaled to fit */
+  .ui { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden;
+        transform-origin: 0 0; transform: scale(var(--s, .5)); background: #0e0e12; }
+  .layer { position: absolute; inset: 0; }
+
+  /* Background: today's landscape, or a slow drifting gradient if there's no photo */
+  /* Four soft colour blobs, each drifting on its own path, while the whole palette cycles hue */
+  .gradient { overflow: hidden; background: #0b0b10; animation: hue 45s linear infinite; }
+  .gradient i { position: absolute; width: 1100px; height: 1100px; border-radius: 50%; }
+  .gradient i:nth-child(1) { left: -10%; top: -25%; background: radial-gradient(circle, rgba(110,80,220,.85), transparent 65%);
+                             animation: blobA 22s ease-in-out infinite alternate; }
+  .gradient i:nth-child(2) { right: -15%; top: -15%; background: radial-gradient(circle, rgba(20,150,170,.75), transparent 65%);
+                             animation: blobB 28s ease-in-out infinite alternate; }
+  .gradient i:nth-child(3) { left: 20%; bottom: -40%; background: radial-gradient(circle, rgba(220,100,60,.7), transparent 65%);
+                             animation: blobC 25s ease-in-out infinite alternate; }
+  .gradient i:nth-child(4) { left: 55%; top: 15%; width: 800px; height: 800px;
+                             background: radial-gradient(circle, rgba(200,60,140,.6), transparent 65%);
+                             animation: blobD 31s ease-in-out infinite alternate; }
+  @keyframes blobA { to { transform: translate(650px, 320px) scale(1.2); } }
+  @keyframes blobB { to { transform: translate(-750px, 260px) scale(.85); } }
+  @keyframes blobC { to { transform: translate(-420px, -380px) scale(1.15); } }
+  @keyframes blobD { to { transform: translate(-560px, 220px) scale(1.3); } }
+  @keyframes hue { to { filter: hue-rotate(360deg); } }
+  .photo { background: center / cover no-repeat; opacity: 0; transition: opacity .8s; }
+  .photo.ready { opacity: 1; }
+  .fallback .photo, .fallback .credit { display: none; }
+  .shade { background: linear-gradient(to bottom, rgba(0,0,0,.4) 0%, rgba(0,0,0,0) 22%,
+                                       rgba(0,0,0,0) 48%, rgba(0,0,0,.6) 80%, rgba(0,0,0,.8) 100%); }
+  .dim { background: rgba(8,8,10,.62); opacity: 0; }
+  .ui.down .dim { opacity: 1; }
+
+  /* Top-left: where today's photo is from */
+  .credit { position: absolute; top: 44px; left: 89px; max-width: 900px;
+            text-shadow: 0 2px 10px rgba(0,0,0,.6); }
+  .credit b { display: block; font-size: 28px; font-weight: 600;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .credit span { display: block; margin-top: 6px; font-size: 19px; opacity: .75;
+                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ui.down .credit { opacity: 0; }
+
+  /* Top-right: Wi-Fi + network, Settings, clock */
+  .status { position: absolute; top: 34px; right: 89px; display: flex; align-items: center; gap: 14px; }
+  .chip { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 24px; border-radius: 32px;
+          font-size: 26px; font-weight: 600; cursor: pointer; text-shadow: 0 1px 8px rgba(0,0,0,.55); }
+  .chip.icon { width: 64px; padding: 0; justify-content: center; }
+  .chip svg { width: 34px; height: 34px; flex: none; }
+  .chip.on { background: #fff; color: #111; text-shadow: none; transform: scale(1.08);
+             box-shadow: 0 12px 30px rgba(0,0,0,.4); }
+  .chip.active { background: rgba(255,255,255,.25); }
+  .clock { font-size: 40px; font-weight: 600; margin-left: 12px; text-shadow: 0 2px 12px rgba(0,0,0,.5); }
+
+  /* Options menu under the ••• chip. Items get added here as they're built. */
+  .menu { position: absolute; top: 116px; right: 89px; width: 420px; padding: 12px; border-radius: 28px;
+          background: rgba(28,28,30,.94); box-shadow: 0 30px 60px rgba(0,0,0,.5); display: none; }
+  .menu.open { display: block; }
+  .item { display: flex; align-items: center; gap: 18px; height: 72px; padding: 0 22px; border-radius: 18px;
+          font-size: 26px; font-weight: 600; cursor: pointer; }
+  .item svg { width: 32px; height: 32px; flex: none; }
+  .item.on { background: #fff; color: #111; }
+
+  /* App icons */
+  .ui.down .page { transform: translateY(-660px); }
+  .ui:not(.down) .tile.below { opacity: 0; }
+  .tile { position: absolute; width: 257px; height: 145px; border-radius: 16px; cursor: pointer;
+          background: #2c2c2e center / cover no-repeat; box-shadow: 0 10px 24px rgba(0,0,0,.35); }
+  .tile::after { content: ""; position: absolute; inset: 0; border-radius: inherit; opacity: 0;
+                 background: linear-gradient(120deg, rgba(255,255,255,.32), rgba(255,255,255,0) 45%); }
+  .tile.on { transform: translateY(-6px) scale(1.14); z-index: 2;
+             box-shadow: 0 40px 50px -14px rgba(0,0,0,.75); }
+  .tile.on::after { opacity: 1; }
+  .name { position: absolute; left: 50%; top: calc(100% + 14px); transform: translateX(-50%);
+          white-space: nowrap; font-size: 28px; font-weight: 600; opacity: 0;
+          text-shadow: 0 2px 8px rgba(0,0,0,.6); }
+  .tile.on .name { opacity: 1; }
+  .tile.add { background: rgba(255,255,255,.14); display: grid; place-items: center; }
+  .tile svg { width: 70px; height: 70px; }
+
+  /* Motion, only when animations are on */
+  .anim .tile, .anim .chip { transition: transform .22s cubic-bezier(.2,.9,.3,1), box-shadow .22s, background .22s, color .22s, opacity .3s; }
+  .anim .tile::after, .anim .name { transition: opacity .2s; }
+  .anim .page { transition: transform .45s cubic-bezier(.3,.8,.3,1); }
+  .anim .dim, .anim .credit { transition: opacity .4s; }
+
+  /* Controls under the TV */
+  .controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
+  .controls span { color: rgba(235,235,245,.6); margin: 0 4px 0 10px; }
+  .controls button { font: inherit; color: inherit; background: #1c1c1e; border: 1px solid #3a3a3c;
+                     padding: 7px 14px; border-radius: 8px; cursor: pointer; }
+  .controls button[aria-pressed="true"] { background: #f5f5f7; color: #000; border-color: #f5f5f7; }
+  .hint { font-size: 13px; color: rgba(235,235,245,.45); text-align: center; }
+</style>
+</head>
+<body class="anim">
+  <div class="tv">
+    <div class="bezel">
+      <div class="screen" id="screen">
+        <div class="ui" id="ui">
+          <div class="layer gradient"><i></i><i></i><i></i><i></i></div>
+          <div class="layer photo" id="photo"></div>
+          <div class="layer shade"></div>
+          <div class="layer dim"></div>
+          <div class="credit" id="credit"><b id="photoTitle"></b><span id="photoBy"></span></div>
+          <div class="status">
+            <div class="chip" id="wifi" role="button" aria-label="Wi-Fi settings">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2.5 9a14 14 0 0 1 19 0"/><path d="M5.8 12.4a9.5 9.5 0 0 1 12.4 0"/><path d="M9.1 15.8a4.8 4.8 0 0 1 5.8 0"/><circle cx="12" cy="19.2" r="1.3" fill="currentColor" stroke="none"/></svg>
+              <span>Home Wi-Fi</span>
+            </div>
+            <div class="chip icon" id="more" role="button" aria-label="More options" aria-haspopup="menu">
+              <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </div>
+            <div class="chip icon" id="settings" role="button" aria-label="Settings">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </div>
+            <div class="clock" id="clock"></div>
+          </div>
+          <div class="menu" id="menu" role="menu">
+            <div class="item" role="menuitem" data-act="next">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/></svg>
+              <span>Next wallpaper</span>
+            </div>
+          </div>
+          <div class="layer page" id="page"></div>
+        </div>
+      </div>
+    </div>
+    <div class="stand"></div>
+  </div>
+
+  <div class="controls">
+    <span>Animations</span>
+    <button data-anim="1" aria-pressed="true">On</button>
+    <button data-anim="0" aria-pressed="false">Off (how your TV is set now)</button>
+    <span>Background</span>
+    <button data-bg="photo" aria-pressed="true">Today's photo</button>
+    <button data-bg="fallback" aria-pressed="false">Fallback gradient</button>
+  </div>
+  <p class="hint">Arrow keys move like the remote. Press Up from the top row to reach Wi-Fi, ••• and Settings. Enter is OK, Esc is Back.</p>
+
+<script>
+  const PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg>';
+  const APPS = [
+    ['Netflix', 'netflix'], ['Prime Video', 'prime'], ['YouTube', 'youtube'], ['Play Store', 'playstore'],
+    ['Aerial Views', 'aerialviews'], ['JioHotstar', 'hotstar'], ['Sony LIV', 'sonyliv'],
+    ['Crunchyroll', 'crunchyroll'], ['Apple TV', 'appletv'], ['Add app', null],
+  ];
+  // Layout in TV pixels: 6 across, 257x145 icons, top row low on the screen so the photo shows
+  const COLS = 6, W = 257, GAP = 40, X0 = (1920 - (COLS * W + (COLS - 1) * GAP)) / 2, Y0 = 830, ROW = 230;
+
+  const ui = document.getElementById('ui'), page = document.getElementById('page');
+  const tiles = APPS.map(([name, img], i) => {
+    const t = document.createElement('div');
+    t.className = 'tile' + (img ? '' : ' add') + (i >= COLS ? ' below' : '');
+    t.setAttribute('role', 'button');
+    t.setAttribute('aria-label', name);
+    t.style.left = X0 + (i % COLS) * (W + GAP) + 'px';
+    t.style.top = Y0 + Math.floor(i / COLS) * ROW + 'px';
+    if (img) t.style.backgroundImage = `url(img/${img}.png)`;
+    t.innerHTML = (img ? '' : PLUS) + `<div class="name">${name}</div>`;
+    page.appendChild(t);
+    return t;
+  });
+  const chips = ['wifi', 'more', 'settings'].map(id => document.getElementById(id)), MORE = 1;
+  const menu = document.getElementById('menu'), items = [...menu.querySelectorAll('.item')];
+  const lists = { grid: tiles, top: chips, menu: items };
+  const ACTIONS = { next: nextWallpaper };
+
+  // Focus is a tile (zone 'grid'), a top-right chip ('top') or an options menu item ('menu')
+  let zone = 'grid', cur = 0, lastTile = 0;
+  function setFocus(z, i) {
+    lists[zone][cur].classList.remove('on');
+    zone = z; cur = i;
+    if (z === 'grid') lastTile = i;
+    lists[z][i].classList.add('on');
+    menu.classList.toggle('open', z === 'menu');
+    chips[MORE].classList.toggle('active', z === 'menu');
+    ui.classList.toggle('down', z === 'grid' && i >= COLS);
+  }
+  // Hover moves focus, except while the menu is open, so the mouse can travel down to it
+  const hover = (z, i) => () => { if (zone !== 'menu' || z === 'menu') setFocus(z, i); };
+  tiles.forEach((t, i) => { t.onmouseenter = hover('grid', i); t.onclick = () => setFocus('grid', i); });
+  chips.forEach((c, i) => {
+    c.onmouseenter = hover('top', i);
+    c.onclick = () => i === MORE && zone !== 'menu' ? setFocus('menu', 0) : setFocus('top', i);
+  });
+  items.forEach((it, i) => {
+    it.onmouseenter = hover('menu', i);
+    it.onclick = () => { setFocus('menu', i); ACTIONS[it.dataset.act](); };
+  });
+
+  addEventListener('keydown', e => {
+    const k = e.key;
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'Escape', 'Backspace'].includes(k)) return;
+    e.preventDefault();
+    if (zone === 'menu') {
+      if (k === 'ArrowUp' && cur > 0) setFocus('menu', cur - 1);
+      if (k === 'ArrowDown' && cur < items.length - 1) setFocus('menu', cur + 1);
+      if (k === 'Enter') ACTIONS[items[cur].dataset.act]();
+      if (k === 'Escape' || k === 'Backspace') setFocus('top', MORE);
+      return;
+    }
+    if (zone === 'top') {
+      if (k === 'ArrowLeft' && cur > 0) setFocus('top', cur - 1);
+      if (k === 'ArrowRight' && cur < chips.length - 1) setFocus('top', cur + 1);
+      if (k === 'ArrowDown') setFocus('grid', lastTile < COLS ? lastTile : 0);
+      if (k === 'Enter' && cur === MORE) setFocus('menu', 0);
+      return;
+    }
+    const n = tiles.length, col = cur % COLS, row = Math.floor(cur / COLS);
+    if (k === 'ArrowLeft' && col > 0) setFocus('grid', cur - 1);
+    if (k === 'ArrowRight' && col < COLS - 1 && cur + 1 < n) setFocus('grid', cur + 1);
+    if (k === 'ArrowUp') row > 0 ? setFocus('grid', cur - COLS) : setFocus('top', 0);
+    if (k === 'ArrowDown' && row < Math.floor((n - 1) / COLS)) setFocus('grid', Math.min(cur + COLS, n - 1));
+  });
+
+  // Today's landscape from Wikimedia Commons' featured landscapes (free licences, no key).
+  // Same photo all day, a new one each day. Any failure leaves the gradient showing.
+  const API = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=2&origin=*';
+  const strip = html => html ? new DOMParser().parseFromString(html, 'text/html').body.textContent.trim() : '';
+  let photos = [], shown = 0, req = 0;
+  async function photoList() {
+    const list = await (await fetch(API + '&generator=categorymembers&gcmtitle=Category:Featured_pictures_of_landscapes'
+      + '&gcmtype=file&gcmlimit=500&prop=imageinfo&iiprop=size')).json();
+    return list.query.pages
+      .filter(p => { const s = p.imageinfo && p.imageinfo[0]; return s && s.width >= 1920 && s.width / s.height >= 1.3 && s.width / s.height <= 2; })
+      .map(p => p.title).sort();
+  }
+  async function showPhoto(i) {
+    const mine = ++req, title = photos[i];
+    const info = await (await fetch(API + '&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=1920'
+      + '&iiextmetadatafilter=ObjectName|Artist|LicenseShortName&titles=' + encodeURIComponent(title))).json();
+    const ii = info.query.pages[0].imageinfo[0], m = ii.extmetadata || {};
+    await new Promise((ok, fail) => { const im = new Image(); im.onload = ok; im.onerror = fail; im.src = ii.thumburl; });
+    if (mine !== req) return; // a later Next wallpaper press won
+    const el = document.getElementById('photo');
+    el.style.backgroundImage = `url("${ii.thumburl}")`;
+    el.classList.add('ready');
+    document.getElementById('photoTitle').textContent = strip(m.ObjectName && m.ObjectName.value) || title.replace(/^File:|\.\w+$/g, '');
+    document.getElementById('photoBy').textContent =
+      [strip(m.Artist && m.Artist.value), m.LicenseShortName && m.LicenseShortName.value, 'Wikimedia Commons'].filter(Boolean).join(' · ');
+  }
+  function nextWallpaper() {
+    if (!photos.length) return;
+    shown = (shown + 1) % photos.length;
+    setBackground('photo');
+    showPhoto(shown).catch(() => {});
+  }
+  const day = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
+  photoList().then(list => { photos = list; shown = day % list.length; return showPhoto(shown); })
+    .catch(() => setBackground('fallback'));
+
+  function setBackground(mode) {
+    ui.classList.toggle('fallback', mode === 'fallback');
+    document.querySelectorAll('[data-bg]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.bg === mode)));
+  }
+  document.querySelectorAll('[data-bg]').forEach(b => b.addEventListener('click', () => setBackground(b.dataset.bg)));
+  document.querySelectorAll('[data-anim]').forEach(b => b.addEventListener('click', () => {
+    document.body.classList.toggle('anim', b.dataset.anim === '1');
+    document.querySelectorAll('[data-anim]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+
+  const screen = document.getElementById('screen');
+  new ResizeObserver(() => ui.style.setProperty('--s', screen.clientWidth / 1920)).observe(screen);
+
+  const clock = document.getElementById('clock');
+  const tick = () => { const d = new Date(); clock.textContent = `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')}`; };
+  tick(); setInterval(tick, 15000);
+
+  setFocus('grid', 0);
+</script>
+</body>
+</html>
