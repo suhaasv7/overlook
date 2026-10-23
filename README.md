@@ -97,6 +97,13 @@ sh install.sh <TV_IP> "" "bluetooth,sound,picture"   # any of them, in any order
 sh install.sh <TV_IP> "" "none"                      # take them away
 ```
 
+## PatchWall info overlay on Mi TV
+
+On the verified MiTV-AXSO0, PatchWall can show the time and weather over the current app: a
+full-screen translucent grey layer that closes on another press or after eight seconds. After
+installing the APK, opt in with `sh overlay.sh <TV_IP> on`. This needs a one-time ADB log permission
+and the Overlook accessibility service. See [the Mi TV setup](devices/mi-tv.md#patchwall-time-and-weather-overlay-23-october-2026).
+
 ## Make it yours
 
 - **Each TV's setup:** a settings file in `devices/`, like [`mi-tv-stick.conf`](devices/mi-tv-stick.conf):

@@ -9,8 +9,8 @@
 | Set up | 21 October 2026 |
 | Change list | [`mi-tv.txt`](mi-tv.txt): check or re-apply everything below with `check.sh` |
 | Overlook settings | [`mi-tv.conf`](mi-tv.conf): its apps and greeting, for `install.sh` |
-| Overlook build | `a921fa1` (21 October 2026) |
-| Last checked | 21 October 2026, after a restart: `check.sh` passed all 44 items |
+| Overlook build | 1.4.2 (23 October 2026) |
+| Last checked | Overlay checked 23 October 2026; full cleanup last checked 21 October after a restart (44 items passed) |
 
 ## Result
 
@@ -144,43 +144,65 @@ grep '^appop .* RUN_ANY' devices/mi-tv.txt | cut -d' ' -f2 | while read p; do ad
 
 Then reset the settings with the commands in the table above.
 
-## Experimental PatchWall info overlay (not yet tested on this TV)
+## PatchWall time and weather overlay (23 October 2026)
 
-The optional **Overlook info overlay** accessibility service shows a translucent time/weather card
-at the top right, without opening Home, taking audio focus or receiving touch input. It disappears
-after eight seconds; pressing the mapped key again closes it. Weather uses the same location and
-clock preferences as Home. The service does not read screen content. PatchWall stays disabled.
+Tested on this **Mi TV**, at `192.168.1.38:5555`, with Overlook **1.4.2**. This is not the TV Stick.
 
-After installing the new APK, enable **Overlook info overlay** in Android Settings → Accessibility.
-This is opt-in: install.sh does not enable the service or change button mappings. Accessibility
-provides the overlay window permission; a separate "display over other apps" grant is not needed.
+Press **PatchWall** for a full-screen translucent grey layer with a large centred clock and weather.
+Press it again to close, or wait eight seconds. The window does not take focus, touch input or audio
+focus; the app beneath remains in front. PatchWall itself (`com.mitv.tvhome.atv`) stays disabled.
 
-First preview it while a streaming app or HDMI is playing (replace `<TV>` with the ADB serial):
+### Why this TV needs a bridge
+
+Its remote layout, `/vendor/usr/keylayout/Vendor_2717_Product_32b9.kl`, labels PatchWall as scan code
+150 → `BUTTON_2` (Android key code **189**); scan 580 also maps to that key. Xiaomi's system policy
+sends it directly to `com.xiaomi.android.tvsetup.partnercustomizer/.GlobalKeyReceiver` before an
+accessibility key filter can receive it. That receiver hardcodes PatchWall's package and offers no
+remap setting. Netflix and Prime buttons are handled by the same receiver, which is left enabled.
+
+The optional `patchwall_bridge=mi-tv` mode listens for the receiver's exact key-up message,
+`receiving KeyEvent.KEYCODE_BUTTON_2 start tvhome`, under the `GlobalKey` tag in the main/system
+log buffers. It tails only new events; it does not save or upload logs. A one-time ADB grant of
+`READ_LOGS` is required. The on-device accessibility service owns the reader, so no laptop daemon
+or ongoing ADB connection is required. The permission persists, and Android can rebind the enabled
+service; a complete TV reboot has not yet been tested.
+
+### Install / enable
 
 ```sh
-adb -s <TV> shell am broadcast -a com.ansub.tvhome.TOGGLE_INFO -p com.ansub.tvhome
+sh build.sh
+adb -s 192.168.1.38:5555 install -r out/tvhome.apk
+sh overlay.sh 192.168.1.38 on
 ```
 
-The preview receiver is registered only while the accessibility service is connected, and requires
-the shell's DUMP permission. It does not start the launcher.
+`overlay.sh` opts in only on the verified MiTV-AXSO0 model, grants log access and enables the overlay
+accessibility service, preserving any other enabled services. Ordinary `install.sh` leaves this
+feature opt-in. The app row, folders and existing home-screen preferences are not reset.
 
-Before mapping, identify the physical PatchWall key with `adb -s <TV> shell getevent -lt` while
-pressing it, and inspect `adb -s <TV> shell dumpsys window policy` for vendor global-key routing.
-Linux scan codes from getevent are not Android key codes. Do not assume another Mi model's code.
-Once the Android key code is confirmed, configure it using the existing Overlook options intent:
+The setting is `patchwall_key=189;patchwall_bridge=mi-tv` in Overlook's existing options interface.
+The generic key-filter handler remains available for other remotes; it defaults to off. A separate
+"display over other apps" grant is unnecessary because this is an accessibility overlay.
+
+### Verified
+
+- Physical PatchWall press: owner confirmed the overlay appears over a YouTube video.
+- Full-screen grey layer, complete centred clock, weather and condition icon visually checked.
+- Simulated PatchWall event exercises the same Xiaomi receiver: opening, second-press dismissal,
+  eight-second timeout and unchanged YouTube focus checked.
+- PatchWall is still disabled; the Xiaomi receiver and branded app buttons are unchanged.
+- HDMI and a full power-cycle test remain unverified.
+
+For a preview that does not depend on the physical key:
 
 ```sh
-adb -s <TV> shell am start -n com.ansub.tvhome/.MainActivity --es options 'patchwall_key=<ANDROID_KEY_CODE>'
+adb -s 192.168.1.38:5555 shell am broadcast -a com.ansub.tvhome.TOGGLE_INFO -p com.ansub.tvhome
 ```
 
-The mapping defaults to 0 (off). Set `patchwall_key=0` to remove it, or disable the accessibility
-service to stop the feature entirely. Essential navigation, power and volume keys are rejected.
-The equivalent `patchwall_key=...` option can be added to this TV's .conf after verification;
-mi-tv.conf deliberately leaves it unset for now.
+This shell-only preview is registered while the accessibility service is connected and requires
+DUMP permission. To disable the overlay and revoke its log permission:
 
-Device validation still required: preview over Home, a streaming video and each HDMI input; check
-playback/audio continue, auto-hide and repeated button presses work, and normal remote keys still
-reach the playing app. Then test the physical key from those same places and after a restart.
-Xiaomi may consume the PatchWall button before accessibility receives it; if so this handler alone
-will not remap it and a vendor-specific bridge will be needed. Other key-filtering accessibility
-services may also prevent delivery. No TV settings have been changed as part of this code change.
+```sh
+sh overlay.sh 192.168.1.38 off
+```
+
+This preserves other accessibility services and leaves PatchWall itself disabled.
