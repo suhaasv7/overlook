@@ -143,3 +143,44 @@ grep '^appop .* RUN_ANY' devices/mi-tv.txt | cut -d' ' -f2 | while read p; do ad
 ```
 
 Then reset the settings with the commands in the table above.
+
+## Experimental PatchWall info overlay (not yet tested on this TV)
+
+The optional **Overlook info overlay** accessibility service shows a translucent time/weather card
+at the top right, without opening Home, taking audio focus or receiving touch input. It disappears
+after eight seconds; pressing the mapped key again closes it. Weather uses the same location and
+clock preferences as Home. The service does not read screen content. PatchWall stays disabled.
+
+After installing the new APK, enable **Overlook info overlay** in Android Settings → Accessibility.
+This is opt-in: install.sh does not enable the service or change button mappings. Accessibility
+provides the overlay window permission; a separate "display over other apps" grant is not needed.
+
+First preview it while a streaming app or HDMI is playing (replace `<TV>` with the ADB serial):
+
+```sh
+adb -s <TV> shell am broadcast -a com.ansub.tvhome.TOGGLE_INFO -p com.ansub.tvhome
+```
+
+The preview receiver is registered only while the accessibility service is connected, and requires
+the shell's DUMP permission. It does not start the launcher.
+
+Before mapping, identify the physical PatchWall key with `adb -s <TV> shell getevent -lt` while
+pressing it, and inspect `adb -s <TV> shell dumpsys window policy` for vendor global-key routing.
+Linux scan codes from getevent are not Android key codes. Do not assume another Mi model's code.
+Once the Android key code is confirmed, configure it using the existing Overlook options intent:
+
+```sh
+adb -s <TV> shell am start -n com.ansub.tvhome/.MainActivity --es options 'patchwall_key=<ANDROID_KEY_CODE>'
+```
+
+The mapping defaults to 0 (off). Set `patchwall_key=0` to remove it, or disable the accessibility
+service to stop the feature entirely. Essential navigation, power and volume keys are rejected.
+The equivalent `patchwall_key=...` option can be added to this TV's .conf after verification;
+mi-tv.conf deliberately leaves it unset for now.
+
+Device validation still required: preview over Home, a streaming video and each HDMI input; check
+playback/audio continue, auto-hide and repeated button presses work, and normal remote keys still
+reach the playing app. Then test the physical key from those same places and after a restart.
+Xiaomi may consume the PatchWall button before accessibility receives it; if so this handler alone
+will not remap it and a vendor-specific bridge will be needed. Other key-filtering accessibility
+services may also prevent delivery. No TV settings have been changed as part of this code change.
