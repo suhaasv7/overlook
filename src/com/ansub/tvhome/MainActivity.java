@@ -114,7 +114,7 @@ public class MainActivity extends Activity {
     // top row sits at PAGE_TOP with the others below it.
     private static final int MARGIN = 89, GAP = 40, RADIUS = 16;
     private static final int ROW1_TOP = 830, ROW_STEP = 230, PAGE_TOP = 170;
-    private static final int STATUS_TOP = 34, CHIP = 64, CHIP_ICON = 34, CHIP_GAP = 14; // the top right
+    private static final int STATUS_TOP = 34, CHIP = 64, CHIP_ICON = 34, CHIP_GAP = 32; // the top right
     private float scale = 1f;
 
     private static Typeface regular, semibold;
