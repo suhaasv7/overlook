@@ -1,6 +1,7 @@
 package com.ansub.tvhome;
 
 import android.accessibilityservice.AccessibilityService;
+import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -52,7 +53,8 @@ public final class InfoOverlayService extends AccessibilityService {
     private volatile java.lang.Process bridgeProcess;
     private long lastBridgePress;
     private final SharedPreferences.OnSharedPreferenceChangeListener configChanged = (prefs, key) -> {
-        if ("o.patchwall_bridge".equals(key)) main.post(this::restartBridge);
+        if ("o.patchwall_bridge".equals(key) || "o.patchwall_key".equals(key))
+            main.post(() -> { updateKeyFiltering(); restartBridge(); });
     };
     private final Runnable dismiss = this::hide;
     // Shell-only preview, so testing the panel doesn't depend on the vendor's key routing.
@@ -79,7 +81,21 @@ public final class InfoOverlayService extends AccessibilityService {
             registered = true;
             getSharedPreferences("config", 0).registerOnSharedPreferenceChangeListener(configChanged);
         }
+        updateKeyFiltering();
         restartBridge();
+    }
+
+    private void updateKeyFiltering() {
+        AccessibilityServiceInfo info = getServiceInfo();
+        if (info == null) return;
+        int key;
+        try { key = Integer.parseInt(option("patchwall_key", "0")); }
+        catch (NumberFormatException e) { key = 0; }
+        // The Xiaomi bridge needs no key filter. Leave native held-key repeats untouched.
+        if (!bridgeEnabled() && allowed(key))
+            info.flags |= AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
+        else info.flags &= ~AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
+        setServiceInfo(info);
     }
 
     @Override protected boolean onKeyEvent(KeyEvent event) {

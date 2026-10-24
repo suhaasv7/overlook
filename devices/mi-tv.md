@@ -172,6 +172,10 @@ sends it directly to `com.xiaomi.android.tvsetup.partnercustomizer/.GlobalKeyRec
 accessibility key filter can receive it. That receiver hardcodes PatchWall's package and offers no
 remap setting. Netflix and Prime buttons are handled by the same receiver, which is left enabled.
 
+The Mi TV bridge leaves accessibility key filtering disabled, preserving native held-key
+repeat handling for volume and other remote buttons. Key filtering is enabled only for a
+configured generic shortcut when the bridge is off.
+
 The optional `patchwall_bridge=mi-tv` mode listens for the receiver's exact key-up message,
 `receiving KeyEvent.KEYCODE_BUTTON_2 start tvhome`, under the `GlobalKey` tag in the main/system
 log buffers. It tails only new events; it does not save or upload logs. A one-time ADB grant of
