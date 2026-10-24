@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.ansub.tvhome" android:versionCode="12" android:versionName="1.4.2">
+    package="com.ansub.tvhome" android:versionCode="13" android:versionName="1.4.3">
     <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="34" />
     <!-- Optional Mi TV bridge: ADB grants this only on TVs whose firmware swallows PatchWall. -->
     <uses-permission android:name="android.permission.READ_LOGS" />

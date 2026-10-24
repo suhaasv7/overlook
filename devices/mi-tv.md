@@ -9,8 +9,8 @@
 | Set up | 21 October 2026 |
 | Change list | [`mi-tv.txt`](mi-tv.txt): check or re-apply everything below with `check.sh` |
 | Overlook settings | [`mi-tv.conf`](mi-tv.conf): its apps and greeting, for `install.sh` |
-| Overlook build | 1.4.2 (23 October 2026) |
-| Last checked | Overlay checked 23 October 2026; full cleanup last checked 21 October after a restart (44 items passed) |
+| Overlook build | 1.4.3 (24 October 2026) |
+| Last checked | Overlay checked 24 October 2026; full cleanup last checked 21 October after a restart (44 items passed) |
 
 ## Result
 
@@ -146,9 +146,16 @@ Then reset the settings with the commands in the table above.
 
 ## PatchWall time and weather overlay (23 October 2026)
 
-Tested on this **Mi TV**, at `192.168.1.38:5555`, with Overlook **1.4.2**. This is not the TV Stick.
+Tested on this **Mi TV**, at `192.168.1.38:5555`, with Overlook **1.4.3**. This is not the TV Stick.
 
-Press **PatchWall** for a full-screen translucent grey layer with a large centred clock and weather.
+Press **PatchWall** for a full-screen translucent grey layer with a large clock at the top right
+and weather underneath. The information floats directly on the layer, with no card or capsule.
+The 24 October restyle uses light typography and translucent shading inspired by Apple’s Liquid
+Glass, with the whole layer sliding in from the right over 380 ms and gently fading into place.
+Android's animator setting is honoured: animations off means an instant appearance; other scales
+keep the designed speed. Closing during the entrance cancels the animator before removing the window.
+Android 9 has no public cross-window backdrop-blur API, so this is a lightweight visual approximation,
+without capturing video frames. See [Android window blur support](https://source.android.com/docs/core/display/window-blurs).
 Press it again to close, or wait eight seconds. The window does not take focus, touch input or audio
 focus; the app beneath remains in front. PatchWall itself (`com.mitv.tvhome.atv`) stays disabled.
 
@@ -186,7 +193,8 @@ The generic key-filter handler remains available for other remotes; it defaults 
 ### Verified
 
 - Physical PatchWall press: owner confirmed the overlay appears over a YouTube video.
-- Full-screen grey layer, complete centred clock, weather and condition icon visually checked.
+- Full-screen grey layer, complete top-right clock, weather and condition icon visually checked; no information containers.
+- Slide entrance, dismissal during animation, auto-hide and unchanged focus checked on 24 October.
 - Simulated PatchWall event exercises the same Xiaomi receiver: opening, second-press dismissal,
   eight-second timeout and unchanged YouTube focus checked.
 - PatchWall is still disabled; the Xiaomi receiver and branded app buttons are unchanged.

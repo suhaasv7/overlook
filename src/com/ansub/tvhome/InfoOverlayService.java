@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.SystemClock;
+import android.provider.Settings;
+import android.view.animation.DecelerateInterpolator;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
@@ -15,6 +17,7 @@ import java.util.Date;
 import java.util.Locale;
 import android.graphics.PixelFormat;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -170,38 +173,45 @@ public final class InfoOverlayService extends AccessibilityService {
         if (panel != null) { hide(); return; }
         if (windows == null) return;
         overlay = new FrameLayout(this);
-        // One translucent grey veil across the entire display; video remains visible underneath.
-        overlay.setBackgroundColor(0x995B6064);
+        // A full-screen translucent grey veil keeps the live picture visible around the glass.
+        overlay.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[] {0x80535B65, 0x66323B46, 0x88545B65}));
         panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setGravity(Gravity.CENTER);
-        panel.setPadding(size(48), size(32), size(48), size(32));
-        overlay.addView(panel, new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER));
+        // Floating typography: no card, capsule or container background behind the information.
+        panel.setGravity(Gravity.RIGHT);
+        FrameLayout.LayoutParams information = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.RIGHT);
+        information.topMargin = size(120);
+        information.rightMargin = size(89);
+        overlay.addView(panel, information);
         TextClock clock = new TextClock(this);
         boolean h24 = "24".equals(option("clock",
                 android.text.format.DateFormat.is24HourFormat(this) ? "24" : "12"));
         clock.setFormat12Hour(h24 ? "HH:mm" : "h:mm a");
         clock.setFormat24Hour(h24 ? "HH:mm" : "h:mm a");
-        clock.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size(112));
+        clock.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size(108));
         clock.setTextColor(0xFFFFFFFF);
-        clock.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        clock.setShadowLayer(size(12), 0, size(3), 0x55000000);
+        clock.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+        clock.setFontFeatureSettings("tnum");
+        clock.setShadowLayer(size(10), 0, size(2), 0x40000000);
         clock.setSingleLine(true);
-        clock.setGravity(Gravity.CENTER);
+        clock.setGravity(Gravity.RIGHT);
         panel.addView(clock, new LinearLayout.LayoutParams(-2, -2));
         LinearLayout conditions = new LinearLayout(this);
         conditions.setGravity(Gravity.CENTER);
+
         sky = new ImageView(this);
-        conditions.addView(sky, new LinearLayout.LayoutParams(size(52), size(52)));
+        conditions.addView(sky, new LinearLayout.LayoutParams(size(38), size(38)));
         temperature = new TextView(this);
         temperature.setText(lastTemperature == null ? "Weather loading…" : lastTemperature + "°C");
         if (lastSky != null) sky.setImageDrawable(new LineIcon(lastSky));
         temperature.setTextColor(0xEBFFFFFF);
-        temperature.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size(40));
+        temperature.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size(32));
         temperature.setPadding(size(12), 0, 0, 0);
         conditions.addView(temperature);
         LinearLayout.LayoutParams weatherLayout = new LinearLayout.LayoutParams(-2, -2);
-        weatherLayout.topMargin = size(18);
+        weatherLayout.topMargin = size(12);
+        weatherLayout.gravity = Gravity.RIGHT;
         panel.addView(conditions, weatherLayout);
         WindowManager.LayoutParams layout = new WindowManager.LayoutParams(
                 -1, -1, WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
@@ -210,17 +220,30 @@ public final class InfoOverlayService extends AccessibilityService {
                         | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
         layout.gravity = Gravity.TOP | Gravity.LEFT;
+        long entranceMs = animationDuration(380);
+        if (entranceMs > 0) {
+            overlay.setTranslationX(getResources().getDisplayMetrics().widthPixels);
+            overlay.setAlpha(.65f);
+        }
         try { windows.addView(overlay, layout); }
         catch (RuntimeException e) {
             Log.w("OverlookOverlay", "Cannot show info overlay", e);
             overlay = null; panel = null; temperature = null; sky = null;
             return;
         }
+        if (entranceMs > 0) overlay.animate().translationX(0f).alpha(1f)
+                .setDuration(entranceMs).setInterpolator(new DecelerateInterpolator(1.8f)).withLayer().start();
         String location = option("location", "");
         weather.refresh(location.isEmpty() ? null : location);
         // No activity focus, input interception or audio focus: playback continues underneath.
         main.postDelayed(dismiss, 8000);
         main.postDelayed(unavailable, 7000);
+    }
+
+    // Android applies animator scale again; retain the intended speed and honour animations off.
+    private long animationDuration(long designMs) {
+        float scale = Settings.Global.getFloat(getContentResolver(), Settings.Global.ANIMATOR_DURATION_SCALE, 1f);
+        return scale <= 0 ? 0 : Math.round(designMs / scale);
     }
 
     private final Runnable unavailable = () -> {
@@ -231,7 +254,10 @@ public final class InfoOverlayService extends AccessibilityService {
     private void hide() {
         main.removeCallbacks(dismiss);
         main.removeCallbacks(unavailable);
-        if (overlay != null) windows.removeView(overlay);
+        if (overlay != null) {
+            overlay.animate().cancel();
+            windows.removeView(overlay);
+        }
         overlay = null; panel = null; temperature = null; sky = null;
     }
 
