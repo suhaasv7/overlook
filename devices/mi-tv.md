@@ -9,7 +9,7 @@
 | Set up | 21 October 2026 |
 | Change list | [`mi-tv.txt`](mi-tv.txt): check or re-apply everything below with `check.sh` |
 | Overlook settings | [`mi-tv.conf`](mi-tv.conf): its apps and greeting, for `install.sh` |
-| Overlook build | 1.4.4 (24 October 2026) |
+| Overlook build | 1.4.5 (24 October 2026) |
 | Last checked | Overlay checked 24 October 2026; full cleanup last checked 21 October after a restart (44 items passed) |
 
 ## Result
@@ -146,7 +146,7 @@ Then reset the settings with the commands in the table above.
 
 ## PatchWall time and weather overlay (23 October 2026)
 
-Tested on this **Mi TV**, at `192.168.1.38:5555`, with Overlook **1.4.4**. This is not the TV Stick.
+Tested on this **Mi TV**, at `192.168.1.38:5555`, with Overlook **1.4.5**. This is not the TV Stick.
 
 Press **PatchWall** for a full-screen translucent grey layer with a large clock at the top right
 and weather underneath. The information floats directly on the layer, with no card or capsule.
@@ -161,8 +161,8 @@ without capturing video frames. See [Android window blur support](https://source
 Press it again to close, or wait eight seconds. The window does not take focus, touch input or audio
 focus; the app beneath remains in front. PatchWall itself (`com.mitv.tvhome.atv`) stays disabled.
 
-The home header uses a time pill on the left and a glass-style controls pill on the right:
-Wi-Fi, Settings, HDMI inputs, then extras. Verified visually on the TV after installation.
+The home header uses a large unboxed clock with the date beneath it on the left. Individual
+glass-style pills on the right show Wi-Fi, Settings, HDMI inputs, then extras. Verified visually on the TV after installation.
 
 ### Why this TV needs a bridge
 

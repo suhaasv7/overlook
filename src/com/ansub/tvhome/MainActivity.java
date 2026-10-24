@@ -222,21 +222,23 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams dp = new LinearLayout.LayoutParams(-2, -2);
         dp.leftMargin = px(24);
         // The home header shows time only.
-        clockTime = clock("h:mm", "H:mm", px(40), Color.WHITE, semibold);
+        clockTime = clock("h:mm", "H:mm", px(76), Color.WHITE, semibold);
         clockTime.setFontFeatureSettings("tnum");
         clockTime.setShadowLayer(px(12), 0, px(2), 0x80000000);
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(-2, -2);
-        clockTime.setGravity(Gravity.CENTER);
-        clockTime.setPadding(px(28), 0, px(28), 0);
-        clockTime.setBackground(headerPill());
-        FrameLayout.LayoutParams timePosition = new FrameLayout.LayoutParams(-2, px(CHIP), Gravity.TOP | Gravity.LEFT);
+        clockTime.setGravity(Gravity.LEFT);
+        LinearLayout timeStack = new LinearLayout(this);
+        timeStack.setOrientation(LinearLayout.VERTICAL);
+        timeStack.addView(clockTime, new LinearLayout.LayoutParams(-2, -2));
+        LinearLayout.LayoutParams datePosition = new LinearLayout.LayoutParams(-2, -2);
+        datePosition.topMargin = px(4);
+        timeStack.addView(clockDate, datePosition);
+        FrameLayout.LayoutParams timePosition = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.LEFT);
         timePosition.topMargin = px(STATUS_TOP);
         timePosition.leftMargin = px(MARGIN);
-        screen.addView(clockTime, timePosition);
-        status.setPadding(px(12), px(8), px(12), px(8));
-        status.setBackground(headerPill());
+        screen.addView(timeStack, timePosition);
         FrameLayout.LayoutParams sp = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.END);
-        sp.topMargin = px(STATUS_TOP - 8);
+        sp.topMargin = px(STATUS_TOP);
         sp.rightMargin = px(MARGIN);
         screen.addView(status, sp);
 
@@ -644,8 +646,7 @@ public class MainActivity extends Activity {
         chip.setGravity(Gravity.CENTER);
         final GradientDrawable bg = new GradientDrawable();
         bg.setCornerRadius(px(CHIP) / 2f);
-        bg.setColor(Color.TRANSPARENT);
-        chip.setBackground(bg);
+        chip.setBackground(headerPill());
         final ImageView iv = new ImageView(this);
         iv.setImageDrawable(icon);
         chip.addView(iv, new LinearLayout.LayoutParams(px(CHIP_ICON), px(CHIP_ICON)));
@@ -667,7 +668,8 @@ public class MainActivity extends Activity {
                 focusedKey = key;
                 showRow(0);
             }
-            bg.setColor(has ? Color.WHITE : Color.TRANSPARENT);
+            if (has) { bg.setColor(Color.WHITE); chip.setBackground(bg); }
+            else chip.setBackground(headerPill());
             if (has) iv.setColorFilter(0xFF111111, PorterDuff.Mode.SRC_IN);
             else iv.clearColorFilter();
             if (name != null) {
@@ -1165,7 +1167,7 @@ public class MainActivity extends Activity {
         String f = "24".equals(clockHours()) ? "H:mm" : "h:mm";
         clockTime.setFormat12Hour(f);
         clockTime.setFormat24Hour(f);
-        clockDate.setVisibility(on("date", false) ? View.VISIBLE : View.GONE);
+        clockDate.setVisibility(View.VISIBLE);
         weatherBox.setVisibility(on("weather", true) && weatherReady ? View.VISIBLE : View.GONE);
         String name = opt("name", "");
         greeting.setText(name.isEmpty() ? "" : String.format(Strings.t("Hi %s"), name));

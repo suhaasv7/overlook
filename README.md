@@ -31,8 +31,8 @@ gives the home screen an Apple TV look.
   last one. Before the first photo ever arrives, soft colours slowly drift and change instead.
 - **One row of apps.** Only your top six apps sit on the photo. Press **Down** and the rest slide up
   while the photo darkens, so they're easy to read.
-- **Glass-style header pills.** Time alone on the left; Wi-Fi, Settings, HDMI inputs and
-  **•••** extras on the right, in that order. Press **Up** from your apps to reach the controls.
+- **Glass-style header pills.** A large clock with the date below on the left; Wi-Fi, Settings, HDMI inputs and
+  **•••** extras in individual pills on the right, in that order. Press **Up** from your apps to reach the controls.
 - **Source** on TVs with inputs: HDMI, AV and the antenna or cable, from the top right (or the remote's
   input button). A connected device shows by name when it reports one over HDMI-CEC ("HDMI 1 ·
   PlayStation 5"), or just as "connected" when it doesn't; names you gave the inputs in TV Settings
