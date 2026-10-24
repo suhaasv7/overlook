@@ -9,7 +9,7 @@
 | Set up | 21 October 2026 |
 | Change list | [`mi-tv.txt`](mi-tv.txt): check or re-apply everything below with `check.sh` |
 | Overlook settings | [`mi-tv.conf`](mi-tv.conf): its apps and greeting, for `install.sh` |
-| Overlook build | 1.4.3 (24 October 2026) |
+| Overlook build | 1.4.4 (24 October 2026) |
 | Last checked | Overlay checked 24 October 2026; full cleanup last checked 21 October after a restart (44 items passed) |
 
 ## Result
@@ -146,18 +146,23 @@ Then reset the settings with the commands in the table above.
 
 ## PatchWall time and weather overlay (23 October 2026)
 
-Tested on this **Mi TV**, at `192.168.1.38:5555`, with Overlook **1.4.3**. This is not the TV Stick.
+Tested on this **Mi TV**, at `192.168.1.38:5555`, with Overlook **1.4.4**. This is not the TV Stick.
 
 Press **PatchWall** for a full-screen translucent grey layer with a large clock at the top right
 and weather underneath. The information floats directly on the layer, with no card or capsule.
 The 24 October restyle uses light typography and translucent shading inspired by Apple’s Liquid
 Glass, with the whole layer sliding in from the right over 380 ms and gently fading into place.
 Android's animator setting is honoured: animations off means an instant appearance; other scales
-keep the designed speed. Closing during the entrance cancels the animator before removing the window.
+keep the designed speed. Closing slides the layer back to the right over 300 ms, including after
+the eight-second timeout. Closing during entrance cancels that motion and slides out from its
+current position. Repeated close presses during exit are ignored; service teardown removes it immediately.
 Android 9 has no public cross-window backdrop-blur API, so this is a lightweight visual approximation,
 without capturing video frames. See [Android window blur support](https://source.android.com/docs/core/display/window-blurs).
 Press it again to close, or wait eight seconds. The window does not take focus, touch input or audio
 focus; the app beneath remains in front. PatchWall itself (`com.mitv.tvhome.atv`) stays disabled.
+
+The home header uses a time pill on the left and a glass-style controls pill on the right:
+Wi-Fi, Settings, HDMI inputs, then extras. Verified visually on the TV after installation.
 
 ### Why this TV needs a bridge
 

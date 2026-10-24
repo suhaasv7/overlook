@@ -31,9 +31,8 @@ gives the home screen an Apple TV look.
   last one. Before the first photo ever arrives, soft colours slowly drift and change instead.
 - **One row of apps.** Only your top six apps sit on the photo. Press **Down** and the rest slide up
   while the photo darkens, so they're easy to read.
-- **Wi-Fi, options, Settings, the weather and the clock** at the top right, and a greeting ("Hi
-  Suhaas") at the top left. The Wi-Fi shows the network's name; the date and a 24-hour clock are a
-  switch away in **•••**. Press **Up** from your apps to reach them.
+- **Glass-style header pills.** Time alone on the left; Wi-Fi, Settings, HDMI inputs and
+  **•••** extras on the right, in that order. Press **Up** from your apps to reach the controls.
 - **Source** on TVs with inputs: HDMI, AV and the antenna or cable, from the top right (or the remote's
   input button). A connected device shows by name when it reports one over HDMI-CEC ("HDMI 1 ·
   PlayStation 5"), or just as "connected" when it doesn't; names you gave the inputs in TV Settings
@@ -90,18 +89,13 @@ installed, it's replaced, because the two are signed with different keys.
 | OK on Source (TVs only) | Pick HDMI 1–3, AV or TV |
 | **Add app** tile | Add any installed app |
 
-Settings shortcuts can join the top right too:
-
-```sh
-sh install.sh <TV_IP> "" "bluetooth,sound,picture"   # any of them, in any order
-sh install.sh <TV_IP> "" "none"                      # take them away
-```
+Bluetooth, sound and picture shortcuts remain available through **•••** extras.
 
 ## PatchWall info overlay on Mi TV
 
 On the verified MiTV-AXSO0, PatchWall can show the time and weather over the current app: a
 full-screen translucent grey layer with a floating clock and weather at the top right, sliding
-in from the right. It closes on another press or after eight seconds. After
+in from the right and back out when dismissed. It closes on another press or after eight seconds. After
 installing the APK, opt in with `sh overlay.sh <TV_IP> on`. This needs a one-time ADB log permission
 and the Overlook accessibility service. See [the Mi TV setup](devices/mi-tv.md#patchwall-time-and-weather-overlay-23-october-2026).
 

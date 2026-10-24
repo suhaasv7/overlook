@@ -131,7 +131,7 @@ public class MainActivity extends Activity {
     private boolean weatherReady;
     private Weather weather;
     private final List<String> ownOrder = new ArrayList<>(); // your app order, under "most used first"
-    private LinearLayout status; // the top right: network, shortcuts, •••, Settings, then the clock
+    private LinearLayout status; // the top-right controls pill
     private TextView netName;
     private String netShown;
     private int shownRow = -1;   // the focused tile's row: how far the page has slid
@@ -215,21 +215,28 @@ public class MainActivity extends Activity {
         weatherBox.setVisibility(View.GONE);
         LinearLayout.LayoutParams wb = new LinearLayout.LayoutParams(-2, -2);
         wb.leftMargin = px(26);
-        status.addView(weatherBox, wb);
+        // Weather remains available in the PatchWall overlay.
         String day = android.text.format.DateFormat.getBestDateTimePattern(java.util.Locale.getDefault(), "EEEdMMM");
         clockDate = clock(day, day, px(28), 0xD9FFFFFF, regular);
         clockDate.setShadowLayer(px(10), 0, px(2), 0x80000000);
         LinearLayout.LayoutParams dp = new LinearLayout.LayoutParams(-2, -2);
         dp.leftMargin = px(24);
-        status.addView(clockDate, dp);
+        // The home header shows time only.
         clockTime = clock("h:mm", "H:mm", px(40), Color.WHITE, semibold);
         clockTime.setFontFeatureSettings("tnum");
         clockTime.setShadowLayer(px(12), 0, px(2), 0x80000000);
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(-2, -2);
-        tp.leftMargin = px(16);
-        status.addView(clockTime, tp);
+        clockTime.setGravity(Gravity.CENTER);
+        clockTime.setPadding(px(28), 0, px(28), 0);
+        clockTime.setBackground(headerPill());
+        FrameLayout.LayoutParams timePosition = new FrameLayout.LayoutParams(-2, px(CHIP), Gravity.TOP | Gravity.LEFT);
+        timePosition.topMargin = px(STATUS_TOP);
+        timePosition.leftMargin = px(MARGIN);
+        screen.addView(clockTime, timePosition);
+        status.setPadding(px(12), px(8), px(12), px(8));
+        status.setBackground(headerPill());
         FrameLayout.LayoutParams sp = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.END);
-        sp.topMargin = px(STATUS_TOP);
+        sp.topMargin = px(STATUS_TOP - 8);
         sp.rightMargin = px(MARGIN);
         screen.addView(status, sp);
 
@@ -240,7 +247,7 @@ public class MainActivity extends Activity {
         FrameLayout.LayoutParams gp = new FrameLayout.LayoutParams(-2, px(CHIP), Gravity.TOP | Gravity.START);
         gp.topMargin = px(STATUS_TOP);
         gp.leftMargin = px(MARGIN);
-        screen.addView(greeting, gp);
+        // Keep the left side exclusively for the clock.
 
         weather = new Weather(this, (t, icon) -> {
             weatherIcon.setImageDrawable(new LineIcon(icon));
@@ -474,16 +481,14 @@ public class MainActivity extends Activity {
             addTile(root, PLAY_STORE, "Play Store", null, LineIcon.PLAY, null, gridX(n), gridY(n++), w, h);
         addTile(root, ADD, Strings.t("Add app"), null, LineIcon.PLUS, null, gridX(n), gridY(n), w, h);
 
-        // The top right, before the clock: the network with its name, any settings shortcuts picked,
-        // Source (on TVs with inputs), ••• and Settings. Added last, so the first app keeps first focus;
+        // The top-right pill: network, Settings, inputs, then extras.
+        // Added last, so the first app keeps first focus;
         // Up from the apps reaches them.
         netName = text(px(26), Color.WHITE, semibold);
         netIcon = addChip(NETWORK, Strings.t("Network"), null, netName);
-        for (int q : quickList())
-            addChip(QUICK + QUICK_NAMES[q], Strings.t(QUICK_LABELS[q]), new LineIcon(QUICK_ICONS[q]), null);
-        if (!sources().isEmpty()) addChip(SOURCE, Strings.t("Source"), new LineIcon(LineIcon.HDMI), null);
-        addChip(MORE, Strings.t("Options"), new LineIcon(LineIcon.MORE), null);
         addChip(SETTINGS, Strings.t("Settings"), new LineIcon(LineIcon.SETTINGS), null);
+        if (!sources().isEmpty()) addChip(SOURCE, "HDMI", new LineIcon(LineIcon.HDMI), null);
+        addChip(MORE, Strings.t("Options"), new LineIcon(LineIcon.MORE), null);
         netState = -1;
         netShown = null;
         refreshNetwork();
@@ -626,6 +631,14 @@ public class MainActivity extends Activity {
 
     // A chip at the top right: an icon, with a name beside it if given. Focused, it turns white with
     // dark contents, Apple TV style. Down goes back to the tile you came up from.
+    private GradientDrawable headerPill() {
+        GradientDrawable glass = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[] {0x665F6976, 0x44323A45, 0x554A535F});
+        glass.setCornerRadius(px(100));
+        glass.setStroke(Math.max(1, px(1)), 0x60FFFFFF);
+        return glass;
+    }
+
     private ImageView addChip(final String key, String label, Drawable icon, final TextView name) {
         final LinearLayout chip = new LinearLayout(this);
         chip.setGravity(Gravity.CENTER);
@@ -677,7 +690,8 @@ public class MainActivity extends Activity {
         });
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(name != null ? -2 : px(CHIP), px(CHIP));
         lp.leftMargin = px(CHIP_GAP);
-        status.addView(chip, status.indexOfChild(weatherBox), lp); // before the weather, date and clock
+        if (status.getChildCount() == 0) lp.leftMargin = 0;
+        status.addView(chip, lp);
         tiles.add(chip);
         return iv;
     }

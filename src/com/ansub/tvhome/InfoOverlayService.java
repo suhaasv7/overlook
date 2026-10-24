@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.AccelerateInterpolator;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
@@ -46,6 +47,7 @@ public final class InfoOverlayService extends AccessibilityService {
     private int heldKey = -1;
     private boolean registered;
     private boolean connected;
+    private boolean exiting;
     private volatile int bridgeGeneration;
     private volatile java.lang.Process bridgeProcess;
     private long lastBridgePress;
@@ -254,20 +256,38 @@ public final class InfoOverlayService extends AccessibilityService {
     private void hide() {
         main.removeCallbacks(dismiss);
         main.removeCallbacks(unavailable);
+        if (overlay == null || exiting) return;
+        exiting = true;
+        FrameLayout departing = overlay;
+        departing.animate().cancel();
+        long exitMs = animationDuration(300);
+        if (exitMs == 0) { removeOverlay(); return; }
+        departing.animate().translationX(getResources().getDisplayMetrics().widthPixels).alpha(.65f)
+                .setDuration(exitMs).setInterpolator(new AccelerateInterpolator(1.4f))
+                .withLayer().withEndAction(() -> {
+                    if (overlay == departing) removeOverlay();
+                }).start();
+    }
+
+    // Service teardown must remove the window immediately, without a pending animation callback.
+    private void removeOverlay() {
+        main.removeCallbacks(dismiss);
+        main.removeCallbacks(unavailable);
         if (overlay != null) {
-            overlay.animate().cancel();
+            overlay.animate().withEndAction(null).cancel();
             windows.removeView(overlay);
         }
         overlay = null; panel = null; temperature = null; sky = null;
+        exiting = false;
     }
 
     @Override public void onAccessibilityEvent(AccessibilityEvent event) { }
-    @Override public void onInterrupt() { hide(); heldKey = -1; }
+    @Override public void onInterrupt() { removeOverlay(); heldKey = -1; }
     @Override public void onDestroy() {
         connected = false;
         restartBridge();
         getSharedPreferences("config", 0).unregisterOnSharedPreferenceChangeListener(configChanged);
-        hide();
+        removeOverlay();
         if (registered) unregisterReceiver(preview);
         super.onDestroy();
     }
