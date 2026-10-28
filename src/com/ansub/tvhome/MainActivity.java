@@ -506,7 +506,7 @@ public class MainActivity extends Activity {
         addChip(MORE, Strings.t("Options"), new LineIcon(LineIcon.MORE), null);
         TextView versionName = text(px(26), Color.WHITE, semibold);
         versionName.setText(isV2() ? "v2" : "v1");
-        addChip(VERSION, "Switch home screen version", new LineIcon(LineIcon.MORE), versionName);
+        addChip(VERSION, "Switch home screen version", null, versionName);
         refreshVersion();
         netState = -1;
         netShown = null;
@@ -668,14 +668,15 @@ public class MainActivity extends Activity {
         chip.setBackground(headerPill());
         final ImageView iv = new ImageView(this);
         iv.setImageDrawable(icon);
-        chip.addView(iv, new LinearLayout.LayoutParams(px(CHIP_ICON), px(CHIP_ICON)));
+        if (icon != null || name == null || !VERSION.equals(key))
+            chip.addView(iv, new LinearLayout.LayoutParams(px(CHIP_ICON), px(CHIP_ICON)));
         if (name != null) {
             name.setSingleLine(true);
             name.setEllipsize(android.text.TextUtils.TruncateAt.END);
             name.setMaxWidth(px(420));
             name.setShadowLayer(px(8), 0, px(1), 0x8C000000);
             LinearLayout.LayoutParams np = new LinearLayout.LayoutParams(-2, -2);
-            np.leftMargin = px(12);
+            np.leftMargin = VERSION.equals(key) ? 0 : px(12);
             chip.addView(name, np);
             chip.setPadding(px(24), 0, px(24), 0);
         }
@@ -1558,6 +1559,12 @@ public class MainActivity extends Activity {
 
     // Only the top row shows over the photo. Moving down past it slides the page up (further for rows
     // below the fourth), darkens the photo and shows the other rows; moving back up undoes it.
+    @Override
+    public void onRequestPermissionsResult(int request, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(request, permissions, results);
+        if (request == 204 && watchNext != null) refreshVersion();
+    }
+
     private boolean isV2() { return "v2".equals(opt("version", "v1")); }
 
     private void refreshVersion() {

@@ -81,7 +81,7 @@ installed, it's replaced, because the two are signed with different keys.
 
 The top-right **v1 / v2** control switches between Classic home and Continue watching. The choice is saved; v1 is the default. V2 shows resume items shared through Android TV's Watch Next feed when the device permits access. Streaming services, including YouTube and Netflix, may not expose viewing activity to third-party launchers.
 
-See [Android TV / Google TV versions](devices/android-google-tv/README.md). V2 has been built and checked on Android TV 9: switching layouts, selection persistence after process restart, and the empty-feed state passed. Playback cards still require validation with an actual shared resume entry.
+See [Android TV / Google TV versions](devices/android-google-tv/README.md). V2 has been checked on Android TV 9: switching layouts, selection persistence, the TV listings permission flow and real shared YouTube entries. Select the shelf access message and allow TV listings when prompted. Other services depend on the entries they share.
 
 ## Using it
 

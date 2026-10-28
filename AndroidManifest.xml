@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.ansub.tvhome" android:versionCode="16" android:versionName="1.5.0">
+    package="com.ansub.tvhome" android:versionCode="17" android:versionName="1.5.1">
     <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="34" />
     <!-- Optional Watch Next feed; some firmware restricts this to the system launcher. -->
-    <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
+    <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
     <!-- Optional Mi TV bridge: ADB grants this only on TVs whose firmware swallows PatchWall. -->
     <uses-permission android:name="android.permission.READ_LOGS" />
     <!-- Only for the network tile: Wi-Fi, Ethernet or offline, and the Wi-Fi signal. -->

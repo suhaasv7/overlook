@@ -2,6 +2,7 @@ package com.ansub.tvhome;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -44,6 +45,21 @@ final class WatchNextShelf extends LinearLayout {
         addView(heading);
         message = label("", 24, Typeface.NORMAL);
         message.setPadding(0, px(12), 0, px(16));
+        message.setOnClickListener(v -> {
+            if (Build.VERSION.SDK_INT >= 26 && activity.checkSelfPermission(
+                    "android.permission.READ_TV_LISTINGS") != PackageManager.PERMISSION_GRANTED)
+                activity.requestPermissions(new String[] {"android.permission.READ_TV_LISTINGS"}, 204);
+        });
+        message.setOnFocusChangeListener((v, has) -> {
+            message.setBackground(background(has));
+            if (has) focused.run();
+        });
+        message.setOnKeyListener((v, key, event) -> {
+            if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
+            if (key == KeyEvent.KEYCODE_DPAD_UP) { up.run(); return true; }
+            if (key == KeyEvent.KEYCODE_DPAD_DOWN) { down.run(); return true; }
+            return false;
+        });
         addView(message);
         HorizontalScrollView scroll = new HorizontalScrollView(activity);
         scroll.setHorizontalScrollBarEnabled(false);
@@ -66,13 +82,24 @@ final class WatchNextShelf extends LinearLayout {
 
     void stop() { active = false; generation++; }
     boolean focusFirst() {
-        return getVisibility() == View.VISIBLE && cards.getChildCount() > 0
-                && cards.getChildAt(0).requestFocus();
+        if (getVisibility() != View.VISIBLE) return false;
+        if (message.isFocusable()) return message.requestFocus();
+        return cards.getChildCount() > 0 && cards.getChildAt(0).requestFocus();
     }
 
     void refresh() {
         active = true;
         final int request = ++generation;
+        boolean needsPermission = Build.VERSION.SDK_INT >= 26 && activity.checkSelfPermission(
+                "android.permission.READ_TV_LISTINGS") != PackageManager.PERMISSION_GRANTED;
+        message.setFocusable(needsPermission);
+        message.setClickable(needsPermission);
+        if (needsPermission) {
+            cards.removeAllViews();
+            message.setText("Allow TV listings access to show Continue watching. Select here to allow.");
+            return;
+        }
+        message.setBackground(null);
         message.setText("Looking for recently watched videos and movies…");
         new Thread(() -> {
             List<Item> items = new ArrayList<>();
@@ -87,7 +114,8 @@ final class WatchNextShelf extends LinearLayout {
                     Set<String> seen = new HashSet<>();
                     if (cursor == null) error = "This TV does not provide a Continue watching feed. Open an app below.";
                     else while (cursor.moveToNext() && items.size() < 20) {
-                        if (cursor.getInt(5) != 0 || cursor.getInt(6) == 0) continue;
+                        int type = cursor.getInt(5);
+                        if (type < 0 || type > 2 || cursor.getInt(6) == 0) continue;
                         String pkg = cursor.getString(0), title = cursor.getString(1), uri = cursor.getString(2);
                         if (pkg == null || title == null || uri == null || !seen.add(pkg + "\n" + uri)) continue;
                         long position = cursor.getLong(3), duration = cursor.getLong(4);
@@ -105,7 +133,7 @@ final class WatchNextShelf extends LinearLayout {
                                     || "content".equalsIgnoreCase(scheme)) continue;
                             intent.addCategory(Intent.CATEGORY_BROWSABLE);
                             if (intent.resolveActivity(activity.getPackageManager()) == null) continue;
-                            items.add(new Item(title, service, intent, position, duration));
+                            items.add(new Item(title, service, intent, position, duration, type));
                         } catch (Exception ignored) { /* Removed apps and invalid deep links are omitted. */ }
                     }
                 } catch (SecurityException e) {
@@ -124,7 +152,7 @@ final class WatchNextShelf extends LinearLayout {
                 setDescendantFocusability(FOCUS_BLOCK_DESCENDANTS);
                 cards.removeAllViews();
                 message.setText(result != null ? result : items.isEmpty()
-                        ? "No shared viewing activity yet. Supported apps add items after you start watching."
+                        ? "No shared resume entries available. Only apps that publish viewing activity can appear."
                         : "From apps that share activity with Android TV. Some services may not appear.");
                 if (result == null) for (Item item : items) addCard(item);
                 setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
@@ -151,9 +179,9 @@ final class WatchNextShelf extends LinearLayout {
         LayoutParams titlePosition = new LayoutParams(-1, px(88));
         titlePosition.topMargin = px(14);
         card.addView(title, titlePosition);
-        String resume = "Resume";
+        String resume = item.type == 1 ? "Next episode" : item.type == 2 ? "New episode" : "Resume";
         if (item.position > 0) resume += " · " + item.position / 60000 + " min watched";
-        if (item.duration > 0) resume += " of " + item.duration / 60000 + " min";
+        if (item.duration > 0) resume += (item.position > 0 ? " of " : " · ") + item.duration / 60000 + " min";
         card.addView(label(resume, 22, Typeface.NORMAL));
         card.setFocusable(true);
         card.setContentDescription(item.title + ", " + item.service + ", " + resume);
@@ -190,9 +218,10 @@ final class WatchNextShelf extends LinearLayout {
         final String title, service;
         final Intent intent;
         final long position, duration;
-        Item(String title, String service, Intent intent, long position, long duration) {
+        final int type;
+        Item(String title, String service, Intent intent, long position, long duration, int type) {
             this.title = title; this.service = service; this.intent = intent;
-            this.position = position; this.duration = duration;
+            this.position = position; this.duration = duration; this.type = type;
         }
     }
 }

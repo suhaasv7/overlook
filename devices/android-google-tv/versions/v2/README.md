@@ -8,16 +8,23 @@ Select **v2** in the top-right version menu, or set `options=version=v2` in your
 
 Uses Android TV's local Watch Next provider on Android 8+. This is not a direct integration with Netflix, YouTube or other account histories. Items appear only when their apps publish resume entries and the firmware permits this launcher to read them. Netflix, YouTube and other services may contribute no items; Google TV can restrict access to the system launcher. No accounts or credentials are collected.
 
-The shelf refreshes when Home resumes. It omits completed entries, non-resume recommendations, duplicate deep links, missing apps and unresolvable links. Empty, restricted, unsupported and unavailable feeds have explicit messages; the app row remains usable. No fake viewing history is displayed.
+The shelf refreshes when Home resumes. It includes Continue, Next episode and New episode entries, and omits completed entries, watchlist-only recommendations, duplicate deep links, missing apps and unresolvable links. Empty, restricted, unsupported and unavailable feeds have explicit messages; the app row remains usable. No fake viewing history is displayed.
+
+## TV listings permission
+
+Select the access message in the shelf and allow Android's TV listings prompt. Overlook requests `android.permission.READ_TV_LISTINGS`, which allows reading other apps' searchable TV provider entries. The former `READ_EPG_DATA` permission does not provide this access. Queries without the correct permission can silently return only Overlook's own rows; an empty result is not proof that no apps publish content.
+
+Implementation references reviewed:
+- [tv-launcher manifest and source](https://github.com/nielsvanvelzen/tv-launcher): declares READ_TV_LISTINGS, requests it at runtime, and queries WatchNextPrograms.
+- [CleanYourTV's Watch Next investigation](https://github.com/Gathin23/cleanyourtv/blob/main/docs/watch-next.md).
+- [Android TV provider source](https://android.googlesource.com/platform/packages/providers/TvProvider/+/master/src/com/android/providers/tv/TvProvider.java): permission checks and searchable-row filtering.
+
+No third-party source code was copied.
 
 ## Validation
 
-APK 1.5.0 (16) builds successfully and passes signature verification. The signing certificate matches the previous installation, and an in-place update succeeded without uninstalling or clearing app data.
+1.5.1 (17) builds and verifies with the existing signing key. An in-place update succeeded on Android TV 9 without clearing app data. The text-only version control no longer includes a dots icon.
 
-Checked on Android TV 9:
-- v1 opens with existing apps and settings.
-- The top-right version menu switches to v2 using remote navigation.
-- v2 selection survives a launcher process restart.
-- Watch Next read permission is granted; the shelf shows its empty-feed message without a crash.
+The permission request was exercised from the shelf and accepted through Android's standard dialog. With READ_TV_LISTINGS granted, real YouTube entries appeared, including resume and next/new episode entries. Remote focus reached the cards; selecting a resume entry opened YouTube, and Home returned to Overlook. Exact playback position was not independently measured. Other services remain dependent on their own shared entries and are not guaranteed.
 
-No resume cards were available during validation. Actual playback deep links, populated-shelf navigation, restricted provider access and other Android TV / Google TV firmware remain unverified. Service-by-service support depends on app contributions and firmware access; the absence of cards does not prove a service has no viewing history.
+The previous 1.5.0 empty-feed observation was made without READ_TV_LISTINGS and must not be treated as evidence of absent viewing activity. Restricted-provider behavior and other firmware still need separate validation.
