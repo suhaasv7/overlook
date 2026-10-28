@@ -1607,7 +1607,7 @@ public class MainActivity extends Activity {
         clockTime.setTextSize(TypedValue.COMPLEX_UNIT_PX, px(v2 ? 82 : 76));
         clockDate.setTextSize(TypedValue.COMPLEX_UNIT_PX, px(v2 ? 27 : 28));
         v2Backdrop.setVisibility(v2 ? View.VISIBLE : View.GONE);
-        appHeading.setVisibility(v2 && shownRow <= 0 ? View.VISIBLE : View.GONE);
+        appHeading.setVisibility(View.GONE);
         appDock.setVisibility(v2 && shownRow <= 0 ? View.VISIBLE : View.GONE);
         int top = 340;
         FrameLayout.LayoutParams position = (FrameLayout.LayoutParams) watchNext.getLayoutParams();
@@ -1622,7 +1622,7 @@ public class MainActivity extends Activity {
     private void showRow(int row) {
         shownRow = row;
         if (watchNext != null) watchNext.setVisibility(isV2() && row == 0 ? View.VISIBLE : View.GONE);
-        if (appHeading != null) appHeading.setVisibility(isV2() && row == 0 ? View.VISIBLE : View.GONE);
+        if (appHeading != null) appHeading.setVisibility(View.GONE);
         if (appDock != null) appDock.setVisibility(isV2() && row == 0 ? View.VISIBLE : View.GONE);
         boolean down = row > 0;
         float y = down ? -(gridTop - px(PAGE_TOP)) - Math.max(0, row - 3) * px(ROW_STEP) : 0;

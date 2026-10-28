@@ -118,3 +118,7 @@ Source of truth: `src/com/ansub/tvhome/MainActivity.java` and `src/com/ansub/tvh
 ## Compact render review
 
 The final 1.6.1 native source and screenshots `tv-scenic-compact.png` and `tv-scenic-compact-menu.png` were independently reviewed and accepted with no concrete findings. They show readable compact captions, the two-entry version menu and the bottom-darkening wallpaper. This is screenshot/source evidence from the connected TV, not a claim about all Android TV firmware.
+
+## App dock heading
+
+1.6.2 removes the Your apps label; the dock shows app icons without a section heading.

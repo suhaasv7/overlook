@@ -53,3 +53,7 @@ TV validation at 1280×720: all three layouts rendered with real shared artwork;
 ### Compact Scenic validation (1.6.1)
 
 Build/signature verification and in-place TV update passed. Actual TV screenshots show smaller cards/controls, a centered smaller app dock, large time/date and progressively darker wallpaper. The menu contains only Scenic v2 then classic v1. Independent native source/screenshot review accepted the layout with no concrete findings; that review did not run device actions or claim coverage on other firmware. Native remote navigation to the shelf and version menu was exercised during capture; crash buffer was empty.
+
+### 1.6.2
+
+Removed the Your apps heading. The app dock and icons remain in place.
