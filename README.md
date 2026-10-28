@@ -77,6 +77,12 @@ Most TVs keep opening their own home screen, so the script offers to turn that o
 uninstalled. It also lets Overlook read the Wi-Fi network's name. If you already have TV Detox
 installed, it's replaced, because the two are signed with different keys.
 
+## Home screen versions
+
+The top-right **v1 / v2** control switches between Classic home and Continue watching. The choice is saved; v1 is the default. V2 shows resume items shared through Android TV's Watch Next feed when the device permits access. Streaming services, including YouTube and Netflix, may not expose viewing activity to third-party launchers.
+
+See [Android TV / Google TV versions](devices/android-google-tv/README.md). V2 has been built and checked on Android TV 9: switching layouts, selection persistence after process restart, and the empty-feed state passed. Playback cards still require validation with an actual shared resume entry.
+
 ## Using it
 
 | On the remote | What happens |
@@ -97,12 +103,12 @@ On the verified MiTV-AXSO0, PatchWall can show the time and weather over the cur
 full-screen translucent grey layer with a floating clock and weather at the top right, sliding
 in from the right and back out when dismissed. It closes on another press or after eight seconds. After
 installing the APK, opt in with `sh overlay.sh <TV_IP> on`. This needs a one-time ADB log permission
-and the Overlook accessibility service. See [the Mi TV setup](devices/mi-tv.md#patchwall-time-and-weather-overlay-23-october-2026).
+and the Overlook accessibility service. See [the Mi TV setup](devices/legacy/mi-tv.md#patchwall-time-and-weather-overlay-23-october-2026).
 
 ## Make it yours
 
-- **Each TV's setup:** a settings file in `devices/`, like [`mi-tv-stick.conf`](devices/mi-tv-stick.conf):
-  the app row, folders, the greeting's name, and the ••• options. `sh install.sh <TV_IP> devices/<tv>.conf`.
+- **Android TV / Google TV setup:** use [`home.conf`](devices/android-google-tv/home.conf):
+  the app row, folders, the greeting's name, and the ••• options. `sh install.sh <TV_IP> devices/android-google-tv/home.conf`.
 - **Default apps:** `apps.txt`, one package name per line, in order.
 - **Photo collections:** `COLLECTIONS` in [`Wallpaper.java`](src/com/ansub/tvhome/Wallpaper.java).
   Each name is a Wikimedia Commons category, `Featured pictures of <name>`.
@@ -157,7 +163,7 @@ nothing came back:
 ```sh
 sh check.sh <TV_IP>                                  # is Overlook still in charge?
 sh check.sh <TV_IP> --fix                            # and fix it
-sh check.sh <TV_IP> --fix devices/mi-tv-stick.txt    # plus everything on that TV's list
+sh check.sh <TV_IP> --fix devices/legacy/mi-tv-stick.txt    # plus everything on that TV's list
 ```
 
 If the TV is stuck restarting, see [TV Detox's help](https://github.com/Ansub/tv-detox#help).

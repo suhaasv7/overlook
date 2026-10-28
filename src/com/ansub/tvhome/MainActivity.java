@@ -119,6 +119,9 @@ public class MainActivity extends Activity {
 
     private static Typeface regular, semibold;
 
+    private WatchNextShelf watchNext;
+    private static final String VERSION = "home-version";
+
     private FrameLayout root; // the page of tiles, which slides up when you move down past the top row
     private Wallpaper wallpaper;
     private View dim;            // darkens the photo while the lower rows show
@@ -264,6 +267,14 @@ public class MainActivity extends Activity {
         moveHint.setVisibility(View.GONE);
         root.addView(moveHint, at(px(MARGIN), px(ROW1_TOP - 64), -2, -2));
 
+        watchNext = new WatchNextShelf(this, scale,
+                () -> { View chip = tile(VERSION); if (chip != null) chip.requestFocus(); },
+                () -> { if (!tiles.isEmpty()) tiles.get(0).requestFocus(); },
+                () -> showRow(0));
+        root.addView(watchNext, at(px(MARGIN), px(330),
+                getResources().getDisplayMetrics().widthPixels - px(2 * MARGIN), px(410)));
+        watchNext.setVisibility(View.GONE);
+
         setContentView(screen);
         applyOptions();
 
@@ -375,6 +386,7 @@ public class MainActivity extends Activity {
             dirty = false;
             buildTiles();
         }
+        refreshVersion();
         wallpaper.start();
         root.removeCallbacks(tick);
         tick.run();
@@ -385,6 +397,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
+        watchNext.stop();
         wallpaper.stop();
         root.removeCallbacks(tick);
         super.onPause();
@@ -491,6 +504,10 @@ public class MainActivity extends Activity {
         addChip(SETTINGS, Strings.t("Settings"), new LineIcon(LineIcon.SETTINGS), null);
         if (!sources().isEmpty()) addChip(SOURCE, "HDMI", new LineIcon(LineIcon.HDMI), null);
         addChip(MORE, Strings.t("Options"), new LineIcon(LineIcon.MORE), null);
+        TextView versionName = text(px(26), Color.WHITE, semibold);
+        versionName.setText(isV2() ? "v2" : "v1");
+        addChip(VERSION, "Switch home screen version", new LineIcon(LineIcon.MORE), versionName);
+        refreshVersion();
         netState = -1;
         netShown = null;
         refreshNetwork();
@@ -597,6 +614,8 @@ public class MainActivity extends Activity {
                 if (!down) showEditMenu(key);
                 return true;
             }
+            if (down && code == KeyEvent.KEYCODE_DPAD_UP && rowOf(v) == 0
+                    && isV2() && watchNext.focusFirst()) return true;
             if (!ok) return false;
             if (down) {
                 if (ev.getRepeatCount() == 0) longPressed = false;
@@ -683,6 +702,7 @@ public class MainActivity extends Activity {
         chip.setOnKeyListener((v, code, ev) -> {
             if (ev.getAction() != KeyEvent.ACTION_DOWN) return false;
             if (code == KeyEvent.KEYCODE_DPAD_DOWN) {
+                if (isV2() && watchNext.focusFirst()) return true;
                 View back = tile(lastGridKey);
                 (back != null ? back : tiles.get(0)).requestFocus();
                 return true;
@@ -700,7 +720,15 @@ public class MainActivity extends Activity {
 
     private void open(String key) {
         Intent i;
-        if (ADD.equals(key)) {
+        if (VERSION.equals(key)) {
+            panel("Home screen version", java.util.Arrays.asList(
+                    (isV2() ? "" : "✓ ") + "v1 · Classic home",
+                    (isV2() ? "✓ " : "") + "v2 · Continue watching"), null, which -> {
+                setOpt("version", which == 1 ? "v2" : "v1");
+                buildTiles();
+            }, null, "Your apps and settings stay the same in both versions.");
+            return;
+        } else if (ADD.equals(key)) {
             showAddMenu(-1);
             return;
         } else if (SETTINGS.equals(key)) {
@@ -1530,8 +1558,17 @@ public class MainActivity extends Activity {
 
     // Only the top row shows over the photo. Moving down past it slides the page up (further for rows
     // below the fourth), darkens the photo and shows the other rows; moving back up undoes it.
+    private boolean isV2() { return "v2".equals(opt("version", "v1")); }
+
+    private void refreshVersion() {
+        if (watchNext == null) return;
+        watchNext.setVisibility(isV2() && shownRow <= 0 ? View.VISIBLE : View.GONE);
+        if (isV2()) watchNext.refresh(); else watchNext.stop();
+    }
+
     private void showRow(int row) {
         shownRow = row;
+        if (watchNext != null) watchNext.setVisibility(isV2() && row == 0 ? View.VISIBLE : View.GONE);
         boolean down = row > 0;
         float y = down ? -(gridTop - px(PAGE_TOP)) - Math.max(0, row - 3) * px(ROW_STEP) : 0;
         root.animate().translationY(y).setDuration(ms(450)).start();

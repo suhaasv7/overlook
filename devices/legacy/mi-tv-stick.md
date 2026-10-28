@@ -87,7 +87,7 @@ Undo one with `adb shell cmd appops set <package> RUN_ANY_IN_BACKGROUND allow`.
 
 ```sh
 sh build.sh
-sh install.sh <TV_IP> devices/mi-tv-stick.conf
+sh install.sh <TV_IP> devices/legacy/mi-tv-stick.conf
 ```
 
 The settings file sets the app row and the "Hi Suhaas" greeting. `install.sh` also grants location
@@ -108,8 +108,8 @@ Aerial Views was taken off the row on the TV (it's still the screensaver).
 
 ```sh
 sh undo.sh <TV_IP>                               # Google's home screen back, Overlook removed
-grep '^off ' devices/mi-tv-stick.txt | cut -d' ' -f2 | while read p; do adb shell pm enable "$p"; done
-grep '^appop ' devices/mi-tv-stick.txt | cut -d' ' -f2 | while read p; do adb shell cmd appops set "$p" RUN_ANY_IN_BACKGROUND allow; done
+grep '^off ' devices/legacy/mi-tv-stick.txt | cut -d' ' -f2 | while read p; do adb shell pm enable "$p"; done
+grep '^appop ' devices/legacy/mi-tv-stick.txt | cut -d' ' -f2 | while read p; do adb shell cmd appops set "$p" RUN_ANY_IN_BACKGROUND allow; done
 ```
 
 Then reset the settings with the commands in the table above, and turn Play Store auto-update back on.

@@ -1,28 +1,38 @@
-# Mi TV Stick (MiTV-AESP0, "aquaman"), Android TV 9. Every change made to it, one per line.
-#   Check it:     sh check.sh <TV_IP> devices/mi-tv-stick.txt
-#   Put it back:  sh check.sh <TV_IP> --fix devices/mi-tv-stick.txt
-# What each line is, why it's safe, how to undo it, and the one change made by hand: mi-tv-stick.md
+# Mi TV (MiTV-AXSO0, "dangal"), Android TV 9. Every change made to it, one per line.
+#   Check it:     sh check.sh <TV_IP> devices/legacy/mi-tv.txt
+#   Put it back:  sh check.sh <TV_IP> --fix devices/legacy/mi-tv.txt
+# What each line is, why it's safe and how to undo it: mi-tv.md
 
 # Ads and tracking
 off com.google.android.tvrecommendations
+off com.google.android.leanbacklauncher.recommendations
 off com.miui.tv.analytics
-off tv.alphonso.alphonso_eula
-off com.mitv.tvhome.michannel
+off com.xiaomi.statistic
 off com.mitv.tvhome.atv
 # Spare parts
 off com.google.android.feedback
 off com.android.printspooler
 off com.android.htmlviewer
 off com.google.android.tv.bugreportsender
-off com.mitv.videoplayer
+off com.android.wallpapercropper
+off com.xiaomi.mitv.handbook
 # Screensavers not in use (Aerial Views is the one in use)
 off com.android.dreams.basic
 off com.google.android.backdrop
 off com.mitv.dream
-# Features not used here: casting, YouTube Music, Mi screen mirroring
+# USB media players (no USB drives used on this TV)
+off com.xiaomi.mitv.mediaexplorer
+off com.mitv.gallery
+off com.xiaomi.mimusic2
+off com.mitv.videoplayer
+off com.android.gallery3d
+# Features not used here: casting, YouTube Music, screen mirroring, Mi Home
 off com.google.android.apps.mediashell
 off com.google.android.youtube.tvmusic
 off com.mitv.milinkservice
+off com.xiaomi.mitv.smartshare
+off com.xiaomi.wfdsinkhelperservice
+off com.xiaomi.smarthome.tv.global4
 # Google's home screen, so Home opens Overlook (install.sh turns it off)
 off com.google.android.tvlauncher
 
@@ -30,9 +40,11 @@ off com.google.android.tvlauncher
 global window_animation_scale 0
 global transition_animation_scale 0
 global animator_duration_scale 0.5
-# Screensaver after 10 idle minutes; the stick never sleeps on its own
+# Screensaver after 10 idle minutes; the TV never sleeps on its own
 system screen_off_timeout 600000
 secure sleep_timeout -1
+# HDMI-CEC on, so devices on HDMI report their names to Source (auto wake-up and auto off stay off)
+global hdmi_control_enabled 1
 
 # Streaming apps can't run in the background, so they don't load themselves at startup
 appop com.netflix.ninja RUN_ANY_IN_BACKGROUND ignore
@@ -42,8 +54,8 @@ appop in.startv.hotstar RUN_ANY_IN_BACKGROUND ignore
 appop com.sonyliv RUN_ANY_IN_BACKGROUND ignore
 appop com.crunchyroll.crunchyroid RUN_ANY_IN_BACKGROUND ignore
 appop com.apple.atve.androidtv.appletv RUN_ANY_IN_BACKGROUND ignore
+appop org.jellyfin.androidtv RUN_ANY_IN_BACKGROUND ignore
 
-# Overlook can read the Wi-Fi network's name
+# Overlook can read the Wi-Fi network's name, and see how long apps are open (for "Most used first")
 grant com.ansub.tvhome android.permission.ACCESS_COARSE_LOCATION
-# Overlook can see how long apps are open, for "Most used first"
 appop com.ansub.tvhome GET_USAGE_STATS allow

@@ -109,7 +109,7 @@ JioHotstar, Sony LIV, Crunchyroll, Apple TV and Jellyfin. Undo one with
 
 ```sh
 sh build.sh
-sh install.sh <TV_IP> devices/mi-tv.conf
+sh install.sh <TV_IP> devices/legacy/mi-tv.conf
 ```
 
 The settings file sets the app row (Jellyfin at the end) and the "Hi Suhaas" greeting. `install.sh`
@@ -138,8 +138,8 @@ in its settings, or not supported), so it shows as connected rather than by name
 
 ```sh
 sh undo.sh <TV_IP>                                       # Google's home screen back, Overlook removed
-grep '^off ' devices/mi-tv.txt | cut -d' ' -f2 | while read p; do adb shell pm enable "$p"; done
-grep '^appop .* RUN_ANY' devices/mi-tv.txt | cut -d' ' -f2 | while read p; do adb shell cmd appops set "$p" RUN_ANY_IN_BACKGROUND allow; done
+grep '^off ' devices/legacy/mi-tv.txt | cut -d' ' -f2 | while read p; do adb shell pm enable "$p"; done
+grep '^appop .* RUN_ANY' devices/legacy/mi-tv.txt | cut -d' ' -f2 | while read p; do adb shell cmd appops set "$p" RUN_ANY_IN_BACKGROUND allow; done
 ```
 
 Then reset the settings with the commands in the table above.
