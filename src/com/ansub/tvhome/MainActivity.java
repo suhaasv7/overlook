@@ -272,7 +272,7 @@ public class MainActivity extends Activity {
                 () -> { if (!tiles.isEmpty()) tiles.get(0).requestFocus(); },
                 () -> showRow(0));
         root.addView(watchNext, at(px(MARGIN), px(330),
-                getResources().getDisplayMetrics().widthPixels - px(2 * MARGIN), px(410)));
+                getResources().getDisplayMetrics().widthPixels - px(2 * MARGIN), px(480)));
         watchNext.setVisibility(View.GONE);
 
         setContentView(screen);

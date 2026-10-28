@@ -1,6 +1,6 @@
 # v2 · Continue watching
 
-Adds a horizontal Continue watching shelf above the original app row. Resume cards show the title, streaming app and available playback position. Select a card to open its owning app's deep link. Use Up from the first app row to reach the shelf, Up again for the version control, and Down to return to apps. Down from the top-right controls enters the shelf when cards are available.
+Adds a horizontal Continue watching shelf above the original app row. Resume cards show real provider thumbnails (with poster-art and app-icon fallbacks), title, streaming app and available playback position. Select a card to open its owning app's deep link. Use Up from the first app row to reach the shelf, Up again for the version control, and Down to return to apps. Down from the top-right controls enters the shelf when cards are available.
 
 Select **v2** in the top-right version menu, or set `options=version=v2` in your installation configuration. Switch back to v1 at any time without resetting settings.
 
@@ -28,3 +28,9 @@ No third-party source code was copied.
 The permission request was exercised from the shelf and accepted through Android's standard dialog. With READ_TV_LISTINGS granted, real YouTube entries appeared, including resume and next/new episode entries. Remote focus reached the cards; selecting a resume entry opened YouTube, and Home returned to Overlook. Exact playback position was not independently measured. Other services remain dependent on their own shared entries and are not guaranteed.
 
 The previous 1.5.0 empty-feed observation was made without READ_TV_LISTINGS and must not be treated as evidence of absent viewing activity. Restricted-provider behavior and other firmware still need separate validation.
+
+### 1.5.2 artwork and service checks
+
+Artwork loads off the main thread with two workers, a bounded queue, 4 MB response limits, downsampled images and a 6 MB memory cache. Missing/inaccessible images fall back to the owning app icon; titles and remote controls remain usable. Native TV links are not required to declare the browser category.
+
+The shelf interleaves services, limits each app to ten entries and caps the total at thirty. On the tested Android TV 9 device, shared rows came from YouTube, Crunchyroll, Jellyfin and JioHotstar. After resolving native link handling, 23 playable cards were available from YouTube, Crunchyroll and JioHotstar; thumbnail rendering was verified for YouTube and JioHotstar. Jellyfin rows did not produce playable cards in this check. Netflix, Prime Video, Apple TV and Sony LIV were installed but published no readable Watch Next rows during this check. This is a device observation, not a permanent service support list. Watch Next data is not a service account history API.

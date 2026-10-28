@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
@@ -14,6 +15,8 @@ import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,6 +24,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ArrayBlockingQueue;
 
 /** Optional Android TV feed. Provider access and contributions are controlled by the TV/apps. */
 final class WatchNextShelf extends LinearLayout {
@@ -31,10 +39,15 @@ final class WatchNextShelf extends LinearLayout {
     private final LinearLayout cards;
     private int generation;
     private boolean active;
+    private final ThreadPoolExecutor artwork = new ThreadPoolExecutor(2, 2, 15, TimeUnit.SECONDS,
+            new ArrayBlockingQueue<Runnable>(40), r -> {
+                Thread t = new Thread(r, "overlook-resume-art"); t.setDaemon(true); return t;
+            }, new ThreadPoolExecutor.DiscardOldestPolicy());
     private static final Uri FEED = Uri.parse("content://android.media.tv/watch_next_program");
 
     WatchNextShelf(Activity activity, float scale, Runnable up, Runnable down, Runnable focused) {
         super(activity);
+        artwork.allowCoreThreadTimeOut(true);
         this.activity = activity;
         this.scale = scale;
         this.up = up;
@@ -80,7 +93,7 @@ final class WatchNextShelf extends LinearLayout {
         return text;
     }
 
-    void stop() { active = false; generation++; }
+    void stop() { active = false; generation++; artwork.getQueue().clear(); }
     boolean focusFirst() {
         if (getVisibility() != View.VISIBLE) return false;
         if (message.isFocusable()) return message.requestFocus();
@@ -108,14 +121,21 @@ final class WatchNextShelf extends LinearLayout {
                 error = "Continue watching needs Android TV 8 or newer. Your apps are below.";
             } else {
                 String[] columns = {"package_name", "title", "intent_uri", "last_playback_position_millis",
-                        "duration_millis", "watch_next_type", "browsable"};
+                        "duration_millis", "watch_next_type", "browsable", "poster_art_uri", "thumbnail_uri"};
                 try (Cursor cursor = activity.getContentResolver().query(FEED, columns, null, null,
                         "last_engagement_time_utc_millis DESC")) {
                     Set<String> seen = new HashSet<>();
+                    Map<String, Integer> shared = new LinkedHashMap<>();
+                    Map<String, Integer> omitted = new LinkedHashMap<>();
+                    Map<String, List<Item>> byApp = new LinkedHashMap<>();
                     if (cursor == null) error = "This TV does not provide a Continue watching feed. Open an app below.";
-                    else while (cursor.moveToNext() && items.size() < 20) {
+                    else while (cursor.moveToNext()) {
+                        String owner = cursor.getString(0);
+                        shared.put(owner, shared.containsKey(owner) ? shared.get(owner) + 1 : 1);
                         int type = cursor.getInt(5);
-                        if (type < 0 || type > 2 || cursor.getInt(6) == 0) continue;
+                        if (type < 0 || type > 2 || cursor.getInt(6) == 0) {
+                            count(omitted, owner + ":hidden-or-watchlist"); continue;
+                        }
                         String pkg = cursor.getString(0), title = cursor.getString(1), uri = cursor.getString(2);
                         if (pkg == null || title == null || uri == null || !seen.add(pkg + "\n" + uri)) continue;
                         long position = cursor.getLong(3), duration = cursor.getLong(4);
@@ -131,11 +151,25 @@ final class WatchNextShelf extends LinearLayout {
                             String scheme = intent.getData() == null ? null : intent.getData().getScheme();
                             if (scheme == null || "file".equalsIgnoreCase(scheme)
                                     || "content".equalsIgnoreCase(scheme)) continue;
-                            intent.addCategory(Intent.CATEGORY_BROWSABLE);
-                            if (intent.resolveActivity(activity.getPackageManager()) == null) continue;
-                            items.add(new Item(title, service, intent, position, duration, type));
-                        } catch (Exception ignored) { /* Removed apps and invalid deep links are omitted. */ }
+                            // Native TV playback activities need not be browser entry points.
+                            if (supplied.getComponent() != null
+                                    && pkg.equals(supplied.getComponent().getPackageName()))
+                                intent.setComponent(supplied.getComponent());
+                            if (intent.resolveActivity(activity.getPackageManager()) == null) {
+                                count(omitted, pkg + ":unresolved-link"); continue;
+                            }
+                            List<Item> appItems = byApp.get(pkg);
+                            if (appItems == null) { appItems = new ArrayList<>(); byApp.put(pkg, appItems); }
+                            if (appItems.size() < 10) appItems.add(new Item(title, service, intent, position,
+                                    duration, type, cursor.getString(7), cursor.getString(8)));
+                        } catch (Exception ignored) { count(omitted, pkg + ":invalid-or-missing-app"); }
                     }
+                    // Interleave apps so one prolific service cannot fill the entire shelf.
+                    for (int index = 0; index < 10 && items.size() < 30; index++)
+                        for (List<Item> appItems : byApp.values())
+                            if (index < appItems.size() && items.size() < 30) items.add(appItems.get(index));
+                    android.util.Log.i("OverlookWatchNext", "Shared rows by app: " + shared
+                            + "; playable cards=" + items.size() + "; omitted=" + omitted);
                 } catch (SecurityException e) {
                     error = "This TV limits Continue watching to its system launcher. Open a streaming app below to resume.";
                 } catch (Exception e) {
@@ -165,24 +199,54 @@ final class WatchNextShelf extends LinearLayout {
         }, "overlook-watch-next").start();
     }
 
+    private static void count(Map<String, Integer> counts, String key) {
+        counts.put(key, counts.containsKey(key) ? counts.get(key) + 1 : 1);
+    }
+
     private void addCard(Item item) {
         LinearLayout card = new LinearLayout(activity);
         card.setOrientation(VERTICAL);
-        card.setPadding(px(24), px(24), px(24), px(24));
-        TextView service = label(item.service, 22, Typeface.NORMAL);
+        card.setPadding(px(16), px(12), px(16), px(12));
+        FrameLayout imageBox = new FrameLayout(activity);
+        imageBox.setBackgroundColor(0xFF14191F);
+        ImageView image = new ImageView(activity);
+        image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        // The owning app icon is a real fallback, never an invented thumbnail.
+        try { image.setImageDrawable(activity.getPackageManager().getApplicationIcon(item.intent.getPackage())); }
+        catch (Exception ignored) {}
+        image.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        imageBox.addView(image, new FrameLayout.LayoutParams(-1, -1));
+        card.addView(imageBox, new LayoutParams(-1, px(198)));
+        final int request = generation;
+        artwork.execute(() -> {
+            Bitmap result = ResumeArtwork.load(activity.getApplicationContext(), item.thumbnail);
+            if (result == null) result = ResumeArtwork.load(activity.getApplicationContext(), item.poster);
+            final Bitmap bitmap = result;
+            if (bitmap != null) activity.runOnUiThread(() -> {
+                if (!active || request != generation || activity.isFinishing()) return;
+                image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                image.setImageBitmap(bitmap);
+            });
+        });
+        TextView service = label(item.service, 20, Typeface.NORMAL);
         service.setSingleLine(true);
         service.setEllipsize(TextUtils.TruncateAt.END);
+        service.setPadding(0, px(5), 0, 0);
         card.addView(service);
-        TextView title = label(item.title, 30, Typeface.BOLD);
+        TextView title = label(item.title, 25, Typeface.BOLD);
         title.setMaxLines(2);
         title.setEllipsize(TextUtils.TruncateAt.END);
-        LayoutParams titlePosition = new LayoutParams(-1, px(88));
-        titlePosition.topMargin = px(14);
+        LayoutParams titlePosition = new LayoutParams(-1, px(58));
+        titlePosition.topMargin = px(3);
         card.addView(title, titlePosition);
         String resume = item.type == 1 ? "Next episode" : item.type == 2 ? "New episode" : "Resume";
         if (item.position > 0) resume += " · " + item.position / 60000 + " min watched";
         if (item.duration > 0) resume += (item.position > 0 ? " of " : " · ") + item.duration / 60000 + " min";
-        card.addView(label(resume, 22, Typeface.NORMAL));
+        TextView detail = label(resume, 19, Typeface.NORMAL);
+        detail.setSingleLine(true);
+        detail.setEllipsize(TextUtils.TruncateAt.END);
+        card.addView(detail);
         card.setFocusable(true);
         card.setContentDescription(item.title + ", " + item.service + ", " + resume);
         card.setBackground(background(false));
@@ -201,7 +265,7 @@ final class WatchNextShelf extends LinearLayout {
             try { activity.startActivity(item.intent); }
             catch (Exception e) { Toast.makeText(activity, "This title is unavailable. Open " + item.service + " below.", Toast.LENGTH_LONG).show(); }
         });
-        LayoutParams position = new LayoutParams(px(440), px(248));
+        LayoutParams position = new LayoutParams(px(384), px(344));
         position.rightMargin = px(24);
         cards.addView(card, position);
     }
@@ -215,13 +279,14 @@ final class WatchNextShelf extends LinearLayout {
     }
 
     private static final class Item {
-        final String title, service;
+        final String title, service, poster, thumbnail;
         final Intent intent;
         final long position, duration;
         final int type;
-        Item(String title, String service, Intent intent, long position, long duration, int type) {
+        Item(String title, String service, Intent intent, long position, long duration, int type, String poster, String thumbnail) {
             this.title = title; this.service = service; this.intent = intent;
             this.position = position; this.duration = duration; this.type = type;
+            this.poster = poster; this.thumbnail = thumbnail;
         }
     }
 }
