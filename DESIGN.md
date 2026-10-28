@@ -1,125 +1,120 @@
 ---
-name: Overlook v2 native TV
-description: Approved Apple TV–inspired native home layouts
+name: Overlook v2 Scenic dock
+description: Compact native TV home with artwork and bottom-darkened wallpaper
 colors:
-  backdrop: "#101116"
   artwork-fallback: "#20232B"
   white: "#FFFFFF"
   date: "rgba(255,255,255,0.851)"
-  resume-rest: "rgba(255,255,255,0.910)"
   focus-tint: "rgba(42,48,61,0.098)"
-  focus-ring: "#B8C6E3"
   dock: "rgba(33,38,48,0.600)"
+  wallpaper-clear: "rgba(10,13,18,0)"
+  wallpaper-soft: "rgba(10,13,18,0.094)"
+  wallpaper-mid: "rgba(10,13,18,0.439)"
+  wallpaper-bottom: "rgba(10,13,18,0.902)"
 typography:
   display:
     fontFamily: "Inter SemiBold, MiLan Pro SemiBold, sans-serif-medium"
-    fontSize: "92px"
+    fontSize: "82px"
     fontWeight: 600
   date:
     fontFamily: "Inter, MiLan Pro, sans-serif"
-    fontSize: "30px"
+    fontSize: "27px"
     fontWeight: 400
-  hero-title:
+  app-heading:
+    fontFamily: "Inter SemiBold, MiLan Pro SemiBold, sans-serif-medium"
+    fontSize: "27px"
+    fontWeight: 600
+  shelf-heading:
     fontFamily: "sans-serif"
-    fontSize: "42px"
+    fontSize: "30px"
     fontWeight: 700
   card-title:
     fontFamily: "sans-serif"
-    fontSize: "27px"
+    fontSize: "24px"
     fontWeight: 700
-  cinematic-card-title:
+  service-detail:
     fontFamily: "sans-serif"
-    fontSize: "23px"
-    fontWeight: 700
-  service:
-    fontFamily: "sans-serif"
-    fontSize: "20px"
-    fontWeight: 400
-  detail:
-    fontFamily: "sans-serif"
-    fontSize: "19px"
+    fontSize: "18px"
     fontWeight: 400
 rounded:
-  resume: "12px"
   card: "16px"
   dock: "28px"
+  header-control: "29px"
 spacing:
-  card-gap: "24px"
+  card-gap: "22px"
   safe-edge: "89px"
   header-top: "34px"
+  control-gap: "28px"
 components:
-  resume:
-    backgroundColor: "{colors.resume-rest}"
-    textColor: "{colors.backdrop}"
-    rounded: "{rounded.resume}"
-    width: "180px"
-    height: "42px"
-  resume-focused:
-    backgroundColor: "{colors.white}"
-    textColor: "{colors.backdrop}"
-    rounded: "{rounded.resume}"
   watch-card:
     backgroundColor: "transparent"
     textColor: "{colors.white}"
     rounded: "{rounded.card}"
-    padding: "8px 10px"
+    padding: "7px 9px"
+    width: "376px"
+    height: "332px"
+  header-control:
+    rounded: "{rounded.header-control}"
+    height: "58px"
+  scenic-dock:
+    backgroundColor: "{colors.dock}"
+    rounded: "{rounded.dock}"
+    height: "194px"
 ---
 
-# Design System: Overlook v2 native TV
+# Design System: Overlook v2 Scenic dock
 
 ## Overview
 
-The approved direction is Apple TV–inspired: artwork leads, white type stays readable from the couch, and directional focus is explicit. Three native layouts live inside v2; classic v1 remains the default fallback. All v2 layouts retain the large time/date header without visible Overlook branding.
+The current approved direction is a compact Apple TV–inspired Scenic dock. Wallpaper leads the upper screen and darkens toward the bottom behind viewing content and apps. V2 contains this single layout, with large time/date and no visible Overlook branding. V1 remains classic and unchanged by this design revision.
 
 **Key Characteristics:**
-- Artwork-led viewing content.
-- Large, restrained time and date.
-- Rounded artwork and clear remote focus.
+- Scenic wallpaper with a bottom-darkening veil.
+- Compact artwork cards and centered app tiles.
+- Large time/date and explicit remote focus.
 
 ## Colors
 
-The neutral palette gives provider artwork its own color. Backdrop is the cinematic and artwork-first canvas; artwork-fallback supports missing images. White carries text and focus, with a softer date and translucent resume resting state. Scenic dock uses the translucent dock over wallpaper. Focus-ring is the resume button's cool outline; focus-tint lightly fills focused viewing cards.
+White text and focused outlines sit over dark translucent surfaces. Artwork-fallback supports missing images, focus-tint lightly fills focused cards, and dock groups apps over wallpaper. The v2 wallpaper overlay runs top-to-bottom through wallpaper-clear, wallpaper-soft, wallpaper-mid and wallpaper-bottom, layered over the existing wallpaper shade.
 
 ## Typography
 
-The header uses bundled Inter Regular/SemiBold, falling back to MiLan Pro and Android sans-serif. Watch Next uses Android sans-serif normal/bold. Frontmatter sizes are baseline design pixels, not Android sp.
+The header uses bundled Inter Regular/SemiBold, falling back to MiLan Pro and Android sans-serif. Watch Next uses Android sans-serif normal/bold. Frontmatter sizes are baseline design pixels, not Android sp. The clock uses tabular numerals and system 12/24-hour formatting; dates are localized.
 
-The clock uses tabular numerals. Hero titles have two lines in an 840 × 104 box without font padding. Card titles use one line in Cinematic spotlight and two in the other layouts, with end ellipsis. Service and detail are single-line ellipsized text. Continue watching is 44 in Artwork first and 34 in the other layouts; Your apps is 30.
+Continue watching uses shelf-heading; Your apps uses app-heading. Card titles occupy two lines in a 62-high box without font padding, with end ellipsis. Service and resume detail are single-line ellipsized text. Permission/empty-state text is 22.
 
 ## Layout
 
-All measurements use the native 1920-wide baseline: rendered pixels equal rounded baseline value × display width / 1920. No browser breakpoints apply. Time/date sit at the safe left edge and header top; controls occupy the upper right. Watch Next ends at baseline y=800, ahead of Your apps at y=803 and app tiles beginning at y=830.
+Native rendered pixels equal rounded baseline value × display width / 1920. There are no browser breakpoints. Time/date begin at the safe left edge and header top; controls sit upper right. Icon-only controls are 58 square with 30 icons. Text controls size to content with 22 horizontal padding.
 
-| Layout | Watch Next top | Card size | Artwork height | Composition |
-| --- | ---: | ---: | ---: | --- |
-| Cinematic spotlight | 230 | 390 × 272 | 166 | Dark canvas, 230-high hero, compact viewing rail |
-| Artwork first | 300 | 520 × 420 | 275 | Dark canvas, large viewing artwork |
-| Scenic dock | 340 | 420 × 360 | 220 | Wallpaper, viewing rail, translucent app dock |
-
-The hero's right-aligned artwork is 1120 × 240 with a dark left-to-right veil. Service, title, metadata and resume action are vertically separated. Scenic dock begins at y=840 and is 214 high. Viewing cards have the frontmatter padding and gap; scroll padding leaves space for focus enlargement.
+Watch Next starts at y=340 and ends at y=800. Cards use frontmatter dimensions, padding and gap; artwork height is 198. Scroll padding is 8 horizontally and 10 vertically. Your apps sits at y=803. App tiles start at y=860; each tile width is 90% of its computed classic width, keeping the existing gaps, with the full row centered. Tile height remains 9/16 of width. The dock starts at y=840, extends 18 beyond the app row on each side, and uses the frontmatter height. This is tile-width reduction, not a 90%-viewport row.
 
 ## Elevation & Depth
 
-Dark veils and translucent surfaces establish depth. Header text has a black shadow; viewing-card focus adds a white 4-baseline-pixel stroke, slight tint, scale 1.035 and translationZ 10 over 180ms. Resume focus uses a 3-pixel cool ring and solid white fill. App tiles retain their native 1.14 scale, upward movement and elevation over 220ms. Disabled system animation scale removes Watch Next focus animation.
+The top-to-bottom wallpaper veil and translucent dock establish depth without a solid v2 backdrop. Header text retains black shadows. Focused viewing cards gain a white 4-pixel stroke, focus-tint fill, scale 1.035 and translationZ 10 over 180ms; system-disabled animation scale removes that animation. App focus retains scale 1.14, translationY −6 and translationZ 26 over 220ms. Header controls focus to white with dark foreground, scale 1.08 and translationZ 12 over 220ms. Values are baseline design pixels.
 
 ## Shapes
 
-Viewing artwork is cropped within rounded clipped containers; owning-app icons remain centered when used as fallback. Viewing cards share the artwork corner radius. Resume is more compactly rounded, while the scenic app dock is broader and softer. Use the actual radii in frontmatter.
+Viewing artwork is cropped inside rounded clipped containers. Owning-app fallback icons remain centered. Card and artwork corners share the card radius; the dock is softly rounded and header controls are pills.
 
 ## Components
 
-- **Time/date:** prominent in every v2 layout, with localized date formatting and system 12/24-hour time.
-- **Hero:** Cinematic spotlight only, populated from actual Watch Next content; focused cards update its artwork and metadata. Resume/Watch next opens the owning app link. Up returns to header controls; Down reaches the rail; horizontal keys stay on the hero action.
-- **Viewing rail:** provider artwork, service, title and resume metadata. Up from a cinematic card reaches the hero action; Down reaches apps. The first/last card does not escape horizontally. Permission and empty-state messaging remain readable and navigable.
-- **Apps:** existing app order, folders and controls remain; Scenic dock adds the translucent grouping surface.
-- **Home screen & layout menu:** Cinematic spotlight, Artwork first, Scenic dock, then v1 Classic home; active choice has a checkmark and layout selection persists. V1 stays classic.
+- **Time/date:** prominent in v2, without a logo or greeting competing with the clock.
+- **Viewing rail:** actual provider artwork, service, title and resume metadata. Up reaches header controls; Down reaches apps; first/last cards contain horizontal navigation. Clicking opens the owning-app playback link. Permission and empty states remain navigable.
+- **Apps:** compact centered tiles preserve existing order, folders and controls, grouped by the translucent scenic dock.
+- **Home screen & layout menu:** v2 Scenic dock first, then v1 Classic home, with a checkmark on the active version. There is no cinematic hero or alternate v2 layout selection.
 
 ## Do's and Don'ts
 
-- **Do** preserve the large time/date and artwork-led hierarchy across all v2 layouts.
-- **Do** keep focus outlines, hero text and app headings from overlapping or clipping.
+- **Do** preserve the time/date and bottom-darkened scenic wallpaper.
+- **Do** keep card text and remote-focus outlines readable and unclipped.
 - **Do** use real provider content and owning-app fallback icons.
-- **Don't** add visible Overlook branding to v2 home layouts.
-- **Don't** treat absent provider entries as permission to invent viewing history.
+- **Don't** add visible Overlook branding to v2 home.
+- **Don't** restore the removed cinematic hero or artwork-first layout.
+- **Don't** invent viewing history for providers without readable entries.
 
-Source of truth: `src/com/ansub/tvhome/MainActivity.java` and `src/com/ansub/tvhome/WatchNextShelf.java`. Actual-TV evidence is `.impeccable/review/tv-cinematic.png`, `tv-shelves.png`, `tv-scenic.png` and `tv-version-menu.png`. Finish review accepted source/screenshot fixes for overlap, clipped title and hero focus; this is not a broader runtime-verification claim. Screenshot artifacts contain user viewing data and must not be committed to Git or published.
+Source of truth: `src/com/ansub/tvhome/MainActivity.java` and `src/com/ansub/tvhome/WatchNextShelf.java`. This revision documents current source; final render verification is pending. The intended new review artifact is `.impeccable/review/tv-scenic-compact.png`; its capture has not been verified here. Older three-layout screenshots describe the previous build and are not evidence of this revision. Screenshot artifacts contain user viewing data and must not be committed to Git or published.
+
+## Compact render review
+
+The final 1.6.1 native source and screenshots `tv-scenic-compact.png` and `tv-scenic-compact-menu.png` were independently reviewed and accepted with no concrete findings. They show readable compact captions, the two-entry version menu and the bottom-darkening wallpaper. This is screenshot/source evidence from the connected TV, not a claim about all Android TV firmware.

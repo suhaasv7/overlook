@@ -141,7 +141,7 @@ public class MainActivity extends Activity {
     private String netShown;
     private int shownRow = -1;   // the focused tile's row: how far the page has slid
     private String lastGridKey;  // the tile Down goes back to from the top right
-    private int tileW, tileH, gridTop; // app grid geometry, set by buildTiles
+    private int tileW, tileH, gridTop, gridLeft; // app grid geometry, set by buildTiles
     private final List<View> tiles = new ArrayList<>();
     private boolean dirty = true;
     private java.util.Locale shownLocale; // the TV's language (and region) when the page was built
@@ -192,7 +192,8 @@ public class MainActivity extends Activity {
                 new int[] {0x66000000, 0x00000000, 0x00000000, 0x8C000000, 0xCC000000}));
         screen.addView(shade, new FrameLayout.LayoutParams(-1, -1));
         v2Backdrop = new View(this);
-        v2Backdrop.setBackgroundColor(0xFF101116);
+        v2Backdrop.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[] {0x000A0D12, 0x180A0D12, 0x700A0D12, 0xE60A0D12}));
         v2Backdrop.setVisibility(View.GONE);
         screen.addView(v2Backdrop, new FrameLayout.LayoutParams(-1, -1));
         nightDim = new View(this);
@@ -275,7 +276,7 @@ public class MainActivity extends Activity {
         appDock.setVisibility(View.GONE);
         root.addView(appDock, at(px(MARGIN - 18), px(840),
                 getResources().getDisplayMetrics().widthPixels - px(2 * MARGIN - 36), px(214)));
-        appHeading = text(px(30), 0xF5FFFFFF, semibold);
+        appHeading = text(px(27), 0xF5FFFFFF, semibold);
         appHeading.setText("Your apps");
         appHeading.setVisibility(View.GONE);
         root.addView(appHeading, at(px(MARGIN), px(803), -2, -2));
@@ -476,6 +477,19 @@ public class MainActivity extends Activity {
         PackageManager pm = getPackageManager();
         int m = px(MARGIN), g = px(GAP);
         int w = (getResources().getDisplayMetrics().widthPixels - 2 * m - g * (PER_ROW - 1)) / PER_ROW;
+        if (isV2()) w = Math.round(w * 0.9f);
+        gridLeft = m + (isV2() ? (getResources().getDisplayMetrics().widthPixels - 2 * m
+                - w * PER_ROW - g * (PER_ROW - 1)) / 2 : 0);
+        if (appDock != null) {
+            FrameLayout.LayoutParams dockPosition = (FrameLayout.LayoutParams) appDock.getLayoutParams();
+            dockPosition.leftMargin = gridLeft - px(18);
+            dockPosition.width = w * PER_ROW + g * (PER_ROW - 1) + px(36);
+            dockPosition.height = px(194);
+            appDock.setLayoutParams(dockPosition);
+            FrameLayout.LayoutParams headingPosition = (FrameLayout.LayoutParams) appHeading.getLayoutParams();
+            headingPosition.leftMargin = gridLeft;
+            appHeading.setLayoutParams(headingPosition);
+        }
         int h = w * 9 / 16;
         tileW = w;
         tileH = h;
@@ -518,12 +532,12 @@ public class MainActivity extends Activity {
         // The top-right pill: network, Settings, inputs, then extras.
         // Added last, so the first app keeps first focus;
         // Up from the apps reaches them.
-        netName = text(px(26), Color.WHITE, semibold);
+        netName = text(px(isV2() ? 24 : 26), Color.WHITE, semibold);
         netIcon = addChip(NETWORK, Strings.t("Network"), null, netName);
         addChip(SETTINGS, Strings.t("Settings"), new LineIcon(LineIcon.SETTINGS), null);
         if (!sources().isEmpty()) addChip(SOURCE, "HDMI", new LineIcon(LineIcon.HDMI), null);
         addChip(MORE, Strings.t("Options"), new LineIcon(LineIcon.MORE), null);
-        TextView versionName = text(px(26), Color.WHITE, semibold);
+        TextView versionName = text(px(isV2() ? 24 : 26), Color.WHITE, semibold);
         versionName.setText(isV2() ? "v2" : "v1");
         addChip(VERSION, "Switch home screen version", null, versionName);
         refreshVersion();
@@ -575,7 +589,7 @@ public class MainActivity extends Activity {
             if (lineIcon != null) iv.setImageDrawable(new LineIcon(lineIcon));
             else if (appIcon != null) iv.setImageDrawable(fit(appIcon, size, size));
             inner.addView(iv, new LinearLayout.LayoutParams(size, size));
-            TextView t = text(px(24), 0xE0FFFFFF, regular);
+            TextView t = text(px(isV2() ? 22 : 24), 0xE0FFFFFF, regular);
             t.setText(label);
             t.setSingleLine(true);
             t.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -598,7 +612,7 @@ public class MainActivity extends Activity {
         card.setTag(key);
 
         // Banner tiles show their name underneath when focused.
-        final TextView caption = banner == null ? null : text(px(28), Color.WHITE, semibold);
+        final TextView caption = banner == null ? null : text(px(isV2() ? 25 : 28), Color.WHITE, semibold);
         if (caption != null) {
             caption.setText(label);
             caption.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -617,7 +631,7 @@ public class MainActivity extends Activity {
             if (glass) bg.setColor(has ? 0x38FFFFFF : 0x24FFFFFF);
             shine.setVisibility(has ? View.VISIBLE : View.INVISIBLE);
             if (halo != null) halo.setVisibility(has ? View.VISIBLE : View.INVISIBLE);
-            v.animate().scaleX(has ? 1.14f : 1f).scaleY(has ? 1.14f : 1f).translationY(has ? -px(6) : 0)
+            v.animate().scaleX(has ? (isV2() ? 1.08f : 1.14f) : 1f).scaleY(has ? (isV2() ? 1.08f : 1.14f) : 1f).translationY(has ? -px(6) : 0)
                     .translationZ(has ? px(26) : 0).setDuration(ms(220)).withLayer().start();
             if (caption != null) caption.setVisibility(has ? View.VISIBLE : View.INVISIBLE);
         });
@@ -683,12 +697,12 @@ public class MainActivity extends Activity {
         final LinearLayout chip = new LinearLayout(this);
         chip.setGravity(Gravity.CENTER);
         final GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(px(CHIP) / 2f);
+        bg.setCornerRadius(px(isV2() ? 58 : CHIP) / 2f);
         chip.setBackground(headerPill());
         final ImageView iv = new ImageView(this);
         iv.setImageDrawable(icon);
         if (icon != null || name == null || !VERSION.equals(key))
-            chip.addView(iv, new LinearLayout.LayoutParams(px(CHIP_ICON), px(CHIP_ICON)));
+            chip.addView(iv, new LinearLayout.LayoutParams(px(isV2() ? 30 : CHIP_ICON), px(isV2() ? 30 : CHIP_ICON)));
         if (name != null) {
             name.setSingleLine(true);
             name.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -697,7 +711,7 @@ public class MainActivity extends Activity {
             LinearLayout.LayoutParams np = new LinearLayout.LayoutParams(-2, -2);
             np.leftMargin = VERSION.equals(key) ? 0 : px(12);
             chip.addView(name, np);
-            chip.setPadding(px(24), 0, px(24), 0);
+            chip.setPadding(px(isV2() ? 22 : 24), 0, px(isV2() ? 22 : 24), 0);
         }
         chip.setFocusable(true);
         chip.setTag(key);
@@ -730,8 +744,8 @@ public class MainActivity extends Activity {
             // Nothing left of the first chip: don't jump down into the apps.
             return code == KeyEvent.KEYCODE_DPAD_LEFT && status.indexOfChild(v) == 0;
         });
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(name != null ? -2 : px(CHIP), px(CHIP));
-        lp.leftMargin = px(CHIP_GAP);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(name != null ? -2 : px(isV2() ? 58 : CHIP), px(isV2() ? 58 : CHIP));
+        lp.leftMargin = px(isV2() ? 28 : CHIP_GAP);
         if (status.getChildCount() == 0) lp.leftMargin = 0;
         status.addView(chip, lp);
         tiles.add(chip);
@@ -741,15 +755,13 @@ public class MainActivity extends Activity {
     private void open(String key) {
         Intent i;
         if (VERSION.equals(key)) {
-            panel("Home screen & layout", java.util.Arrays.asList(
-                    selectedLayout("cinematic") + "v2 · Cinematic spotlight",
-                    selectedLayout("shelves") + "v2 · Artwork first",
-                    selectedLayout("scenic") + "v2 · Scenic dock",
+            panel("Home screen version", java.util.Arrays.asList(
+                    (isV2() ? "✓ " : "") + "v2 · Scenic dock",
                     (isV2() ? "" : "✓ ") + "v1 · Classic home"), null, which -> {
-                setOpt("version", which == 3 ? "v1" : "v2");
-                if (which < 3) setOpt("layout", new String[] {"cinematic", "shelves", "scenic"}[which]);
+                setOpt("version", which == 0 ? "v2" : "v1");
+                if (which == 0) setOpt("layout", "scenic");
                 buildTiles();
-            }, null, "Newest version first. Your layout choice is saved.");
+            }, null, "Newest version first. Your selection is saved.");
             return;
         } else if (ADD.equals(key)) {
             showAddMenu(-1);
@@ -1572,7 +1584,7 @@ public class MainActivity extends Activity {
 
     // Where app number i sits in the grid.
     private int gridX(int i) {
-        return px(MARGIN) + (i % PER_ROW) * (tileW + px(GAP));
+        return gridLeft + (i % PER_ROW) * (tileW + px(GAP));
     }
 
     private int gridY(int i) {
@@ -1589,30 +1601,20 @@ public class MainActivity extends Activity {
 
     private boolean isV2() { return "v2".equals(opt("version", "v1")); }
 
-    private String v2Layout() {
-        String layout = opt("layout", "cinematic");
-        return "shelves".equals(layout) || "scenic".equals(layout) ? layout : "cinematic";
-    }
-
-    private String selectedLayout(String layout) {
-        return isV2() && layout.equals(v2Layout()) ? "✓ " : "";
-    }
-
     private void refreshVersion() {
         if (watchNext == null) return;
         boolean v2 = isV2();
-        String layout = v2Layout();
-        clockTime.setTextSize(TypedValue.COMPLEX_UNIT_PX, px(v2 ? 92 : 76));
-        clockDate.setTextSize(TypedValue.COMPLEX_UNIT_PX, px(v2 ? 30 : 28));
-        v2Backdrop.setVisibility(v2 && !"scenic".equals(layout) ? View.VISIBLE : View.GONE);
+        clockTime.setTextSize(TypedValue.COMPLEX_UNIT_PX, px(v2 ? 82 : 76));
+        clockDate.setTextSize(TypedValue.COMPLEX_UNIT_PX, px(v2 ? 27 : 28));
+        v2Backdrop.setVisibility(v2 ? View.VISIBLE : View.GONE);
         appHeading.setVisibility(v2 && shownRow <= 0 ? View.VISIBLE : View.GONE);
-        appDock.setVisibility(v2 && "scenic".equals(layout) && shownRow <= 0 ? View.VISIBLE : View.GONE);
-        int top = "cinematic".equals(layout) ? 230 : "shelves".equals(layout) ? 300 : 340;
+        appDock.setVisibility(v2 && shownRow <= 0 ? View.VISIBLE : View.GONE);
+        int top = 340;
         FrameLayout.LayoutParams position = (FrameLayout.LayoutParams) watchNext.getLayoutParams();
         position.topMargin = px(top);
         position.height = px(800 - top);
         watchNext.setLayoutParams(position);
-        watchNext.configure(layout);
+        watchNext.configure();
         watchNext.setVisibility(v2 && shownRow <= 0 ? View.VISIBLE : View.GONE);
         if (v2) watchNext.refresh(); else watchNext.stop();
     }
@@ -1621,7 +1623,7 @@ public class MainActivity extends Activity {
         shownRow = row;
         if (watchNext != null) watchNext.setVisibility(isV2() && row == 0 ? View.VISIBLE : View.GONE);
         if (appHeading != null) appHeading.setVisibility(isV2() && row == 0 ? View.VISIBLE : View.GONE);
-        if (appDock != null) appDock.setVisibility(isV2() && "scenic".equals(v2Layout()) && row == 0 ? View.VISIBLE : View.GONE);
+        if (appDock != null) appDock.setVisibility(isV2() && row == 0 ? View.VISIBLE : View.GONE);
         boolean down = row > 0;
         float y = down ? -(gridTop - px(PAGE_TOP)) - Math.max(0, row - 3) * px(ROW_STEP) : 0;
         root.animate().translationY(y).setDuration(ms(450)).start();

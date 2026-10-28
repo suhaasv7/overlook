@@ -1,4 +1,6 @@
-# v2 · Continue watching
+# v2 · Scenic dock
+
+**Current release 1.6.1:** Scenic dock is the only v2 layout. The version menu lists v2 Scenic dock before v1 Classic. Prior Cinematic/Artwork selections automatically render Scenic dock; no preference reset is needed. Clock, date, controls, resume cards and app tiles are about 10% smaller than 1.6.0. A wallpaper-only vertical gradient increases darkness toward the bottom. V1 keeps its existing dimensions and wallpaper treatment.
 
 Adds a horizontal Continue watching shelf above the original app row. Resume cards show real provider thumbnails (with poster-art and app-icon fallbacks), title, streaming app and available playback position. Select a card to open its owning app's deep link. Use Up from the first app row to reach the shelf, Up again for the version control, and Down to return to apps. Down from the top-right controls enters the shelf when cards are available.
 
@@ -35,7 +37,7 @@ Artwork loads off the main thread with two workers, a bounded queue, 4 MB respon
 
 The shelf interleaves services, limits each app to ten entries and caps the total at thirty. On the tested Android TV 9 device, shared rows came from YouTube, Crunchyroll, Jellyfin and JioHotstar. After resolving native link handling, 23 playable cards were available from YouTube, Crunchyroll and JioHotstar; thumbnail rendering was verified for YouTube and JioHotstar. Jellyfin rows did not produce playable cards in this check. Netflix, Prime Video, Apple TV and Sony LIV were installed but published no readable Watch Next rows during this check. This is a device observation, not a permanent service support list. Watch Next data is not a service account history API.
 
-## V2 layouts (1.6.0)
+## Historical V2 layouts (1.6.0)
 
 Open the text-only version control in the top-right. The shared **Home screen & layout** menu lists the newest version first:
 
@@ -47,3 +49,7 @@ Open the text-only version control in the top-right. The shared **Home screen & 
 All v2 layouts use a large live clock and date in place of launcher branding. App order, folders and shared viewing activity are common to all layouts. Version and layout selection persist independently; new installations still default to v1. V2 defaults to Cinematic when no layout has been saved. Configuration may use `options=version=v2;layout=cinematic`, `layout=shelves` or `layout=scenic`.
 
 TV validation at 1280×720: all three layouts rendered with real shared artwork; menu order and current-layout checkmark verified; Cinematic selection through the remote menu survived a process restart. Long card titles were resized/ellipsized to avoid clipping, date and hero text no longer overlap, and hero focus restoration was reviewed. Final screenshot/source review accepted these fixes. Browser preview of local HTML remains unavailable to the agent because file URLs are blocked.
+
+### Compact Scenic validation (1.6.1)
+
+Build/signature verification and in-place TV update passed. Actual TV screenshots show smaller cards/controls, a centered smaller app dock, large time/date and progressively darker wallpaper. The menu contains only Scenic v2 then classic v1. Independent native source/screenshot review accepted the layout with no concrete findings; that review did not run device actions or claim coverage on other firmware. Native remote navigation to the shelf and version menu was exercised during capture; crash buffer was empty.

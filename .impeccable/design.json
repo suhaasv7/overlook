@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-28T00:00:00Z",
-  "title": "Design System: Overlook v2 native TV",
+  "title": "Design System: Overlook v2 Scenic dock",
   "extensions": {
     "motion": [
       {
@@ -15,56 +15,55 @@
         "purpose": "Existing app tile focus."
       }
     ],
-    "nativeFocus": {
-      "watchCard": "4 baseline pixel white stroke with focus-tint fill",
-      "heroAction": "3 baseline pixel focus-ring stroke"
-    },
     "nativeScaling": "round(baseline \u00d7 displayWidth / 1920)",
     "evidence": {
-      "scope": "Source and actual-TV screenshot finish review accepted overlap, title clipping and hero focus fixes; no broader runtime claim.",
-      "artifacts": [
-        ".impeccable/review/tv-cinematic.png",
-        ".impeccable/review/tv-shelves.png",
-        ".impeccable/review/tv-scenic.png",
-        ".impeccable/review/tv-version-menu.png"
-      ],
+      "scope": "Current native source inspected; final render verification pending. Older three-layout screenshots are not evidence of this revision.",
+      "plannedArtifact": ".impeccable/review/tv-scenic-compact.png",
+      "captureVerified": false,
       "privacy": "Contains user viewing data. Do not commit screenshots to Git or publish them."
+    },
+    "nativeFocus": {
+      "watchCard": "4 baseline pixel white stroke with focus-tint fill",
+      "headerControl": "white fill, dark foreground; scale 1.08; translationZ 12; 220ms"
+    },
+    "wallpaperGradient": {
+      "orientation": "TOP_BOTTOM",
+      "stops": [
+        "{colors.wallpaper-clear}",
+        "{colors.wallpaper-soft}",
+        "{colors.wallpaper-mid}",
+        "{colors.wallpaper-bottom}"
+      ],
+      "purpose": "Darkens scenic wallpaper toward the bottom, over the existing shade."
     }
   },
   "components": [
-    {
-      "name": "Resume action",
-      "kind": "button",
-      "refersTo": "resume",
-      "description": "Preview translation of the native cinematic hero action; not Android runtime code.",
-      "html": "<button class=\"ds-resume\">Resume</button>",
-      "css": ".ds-resume{width:180px;height:42px;background:rgba(255,255,255,.910);color:#101116;border:3px solid transparent;border-radius:12px;font:700 24px sans-serif}.ds-resume:hover,.ds-resume:focus-visible{background:#fff;border-color:#B8C6E3;outline:none}"
-    },
     {
       "name": "Viewing card",
       "kind": "card",
       "refersTo": "watch-card",
       "description": "Preview of native focus geometry; artwork is intentionally omitted to avoid user viewing data.",
       "html": "<div class=\"ds-card\" tabindex=\"0\"><div class=\"ds-art\"></div><div class=\"ds-service\">Provider</div><strong>Title</strong><div class=\"ds-detail\">Resume</div></div>",
-      "css": ".ds-card{width:420px;height:360px;padding:8px 10px;color:#fff;background:transparent;border:4px solid transparent;border-radius:16px;font:27px sans-serif;transition:transform 180ms}.ds-art{height:220px;background:#20232B;border-radius:16px}.ds-service{font-size:20px;padding-top:5px}.ds-detail{font-size:19px}.ds-card:hover,.ds-card:focus-visible{background:rgba(42,48,61,.098);border-color:#fff;transform:scale(1.035);outline:none}@media(prefers-reduced-motion:reduce){.ds-card{transition:none}}"
+      "css": ".ds-card{width:376px;height:332px;padding:7px 9px;color:#fff;background:transparent;border:4px solid transparent;border-radius:16px;font:24px sans-serif;transition:transform 180ms}.ds-art{height:198px;background:#20232B;border-radius:16px}.ds-service{font-size:18px;padding-top:5px}.ds-detail{font-size:18px}.ds-card:hover,.ds-card:focus-visible{background:rgba(42,48,61,.098);border-color:#fff;transform:scale(1.035);outline:none}@media(prefers-reduced-motion:reduce){.ds-card{transition:none}}"
     }
   ],
   "narrative": {
-    "overview": "The approved direction is Apple TV\u2013inspired: artwork leads, white type stays readable from the couch, and directional focus is explicit. Three native layouts live inside v2; classic v1 remains the default fallback. All v2 layouts retain the large time/date header without visible Overlook branding.",
+    "overview": "The current approved direction is a compact Apple TV\u2013inspired Scenic dock. Wallpaper leads the upper screen and darkens toward the bottom behind viewing content and apps. V2 contains this single layout, with large time/date and no visible Overlook branding. V1 remains classic and unchanged by this design revision.",
     "keyCharacteristics": [
-      "Artwork-led viewing content.",
-      "Large, restrained time and date.",
-      "Rounded artwork and clear remote focus."
+      "Scenic wallpaper with a bottom-darkening veil.",
+      "Compact artwork cards and centered app tiles.",
+      "Large time/date and explicit remote focus."
     ],
     "rules": [],
     "dos": [
-      "Do preserve the large time/date and artwork-led hierarchy across all v2 layouts.",
-      "Do keep focus outlines, hero text and app headings from overlapping or clipping.",
+      "Do preserve the time/date and bottom-darkened scenic wallpaper.",
+      "Do keep card text and remote-focus outlines readable and unclipped.",
       "Do use real provider content and owning-app fallback icons."
     ],
     "donts": [
-      "Don't add visible Overlook branding to v2 home layouts.",
-      "Don't treat absent provider entries as permission to invent viewing history."
+      "Don't add visible Overlook branding to v2 home.",
+      "Don't restore the removed cinematic hero or artwork-first layout.",
+      "Don't invent viewing history for providers without readable entries."
     ]
   }
 }

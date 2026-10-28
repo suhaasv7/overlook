@@ -16,7 +16,7 @@ Launch installed apps and resume shared viewing activity from one home screen.
 
 ## Operating Context
 
-A native Java Android TV launcher. Home is installed on the user's TV. V1 is the classic default; a persistent version control selects v2. The user approved and the native implementation now includes all three Apple TV–inspired v2 layouts: Cinematic spotlight, Artwork first and Scenic dock. A combined newest-first menu selects these layouts or v1 Classic home and saves the layout choice. All v2 layouts show large time/date without visible Overlook branding. See DESIGN.md for the implemented visual system.
+A native Java Android TV launcher installed on the user's TV. V1 is the classic default and remains unchanged. The user selected Scenic dock as the only v2 layout, with smaller elements and a wallpaper gradient that darkens toward the bottom. A persistent newest-first menu selects v2 Scenic dock or v1 Classic home. V2 shows large time/date without visible Overlook branding. See DESIGN.md for the current native visual system.
 
 ## Capabilities and Constraints
 
@@ -28,7 +28,7 @@ Name: Overlook. User requests a modern Apple TV–inspired v2, while retaining c
 
 ## Evidence on Hand
 
-Actual TV screenshots and prior runtime checks, shared thumbnails, existing app banners and fonts. Finish review inspected native source and TV screenshots and accepted fixes for overlap, clipped title and hero focus; it does not establish broader runtime coverage. Review screenshots in .impeccable/review contain user viewing data and are not for Git or publication. No invented titles, services, viewing histories or subscription data.
+Current native source, prior TV screenshots/runtime checks, shared thumbnails, app banners and fonts. The compact Scenic dock revision is documented from source; final render verification is pending. The intended new screenshot is .impeccable/review/tv-scenic-compact.png. Older three-layout screenshots do not verify this revision. Review screenshots contain user viewing data and are not for Git or publication. No invented titles, services, viewing histories or subscription data.
 
 ## Product Principles
 
