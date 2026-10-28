@@ -34,3 +34,16 @@ The previous 1.5.0 empty-feed observation was made without READ_TV_LISTINGS and 
 Artwork loads off the main thread with two workers, a bounded queue, 4 MB response limits, downsampled images and a 6 MB memory cache. Missing/inaccessible images fall back to the owning app icon; titles and remote controls remain usable. Native TV links are not required to declare the browser category.
 
 The shelf interleaves services, limits each app to ten entries and caps the total at thirty. On the tested Android TV 9 device, shared rows came from YouTube, Crunchyroll, Jellyfin and JioHotstar. After resolving native link handling, 23 playable cards were available from YouTube, Crunchyroll and JioHotstar; thumbnail rendering was verified for YouTube and JioHotstar. Jellyfin rows did not produce playable cards in this check. Netflix, Prime Video, Apple TV and Sony LIV were installed but published no readable Watch Next rows during this check. This is a device observation, not a permanent service support list. Watch Next data is not a service account history API.
+
+## V2 layouts (1.6.0)
+
+Open the text-only version control in the top-right. The shared **Home screen & layout** menu lists the newest version first:
+
+1. **v2 · Cinematic spotlight** — focused-title artwork, playback action and compact resume shelf on graphite. Up from resume cards reaches the hero action; Up again reaches controls.
+2. **v2 · Artwork first** — larger thumbnails and a spacious resume shelf on graphite.
+3. **v2 · Scenic dock** — resume cards over the configured wallpaper with apps on a translucent dock.
+4. **v1 · Classic home** — existing classic layout.
+
+All v2 layouts use a large live clock and date in place of launcher branding. App order, folders and shared viewing activity are common to all layouts. Version and layout selection persist independently; new installations still default to v1. V2 defaults to Cinematic when no layout has been saved. Configuration may use `options=version=v2;layout=cinematic`, `layout=shelves` or `layout=scenic`.
+
+TV validation at 1280×720: all three layouts rendered with real shared artwork; menu order and current-layout checkmark verified; Cinematic selection through the remote menu survived a process restart. Long card titles were resized/ellipsized to avoid clipping, date and hero text no longer overlap, and hero focus restoration was reviewed. Final screenshot/source review accepted these fixes. Browser preview of local HTML remains unavailable to the agent because file URLs are blocked.

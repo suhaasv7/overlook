@@ -79,7 +79,7 @@ installed, it's replaced, because the two are signed with different keys.
 
 ## Home screen versions
 
-The top-right **v1 / v2** control switches between Classic home and Continue watching. The choice is saved; v1 is the default. V2 shows resume items shared through Android TV's Watch Next feed when the device permits access. Streaming services, including YouTube and Netflix, may not expose viewing activity to third-party launchers.
+The top-right version control opens a newest-first list: **v2 · Cinematic spotlight**, **v2 · Artwork first**, **v2 · Scenic dock**, then **v1 · Classic home**. V2 uses a large live clock/date, real resume thumbnails and the selected layout. The choice is saved; v1 is the default. V2 shows resume items shared through Android TV's Watch Next feed when the device permits access. Streaming services, including YouTube and Netflix, may not expose viewing activity to third-party launchers.
 
 See [Android TV / Google TV versions](devices/android-google-tv/README.md). V2 has been checked on Android TV 9: switching layouts, selection persistence, the TV listings permission flow and real shared YouTube entries. Select the shelf access message and allow TV listings when prompted. Other services depend on the entries they share.
 

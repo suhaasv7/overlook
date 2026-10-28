@@ -14,6 +14,8 @@ import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.Gravity;
+import android.animation.ValueAnimator;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.FrameLayout;
@@ -35,7 +37,13 @@ final class WatchNextShelf extends LinearLayout {
     private final Activity activity;
     private final float scale;
     private final Runnable up, down, focused;
-    private final TextView message;
+    private final TextView message, heading;
+    private final FrameLayout hero;
+    private final ImageView heroImage;
+    private final TextView heroTitle, heroService, heroMeta, heroResume;
+    private String layout = "scenic";
+    private Item heroItem;
+    private int heroGeneration;
     private final LinearLayout cards;
     private int generation;
     private boolean active;
@@ -54,7 +62,47 @@ final class WatchNextShelf extends LinearLayout {
         this.down = down;
         this.focused = focused;
         setOrientation(VERTICAL);
-        TextView heading = label("Continue watching", 36, Typeface.BOLD);
+        hero = new FrameLayout(activity);
+        hero.setVisibility(View.GONE);
+        heroImage = new ImageView(activity);
+        heroImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        heroImage.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        FrameLayout.LayoutParams artPosition = new FrameLayout.LayoutParams(px(1120), px(240), Gravity.RIGHT);
+        hero.addView(heroImage, artPosition);
+        View veil = new View(activity);
+        veil.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[] {0xFF101116, 0xFF101116, 0xC0101116, 0x00101116}));
+        hero.addView(veil, new FrameLayout.LayoutParams(-1, -1));
+        heroService = label("", 22, Typeface.NORMAL);
+        hero.addView(heroService, heroAt(0, 0, 780, 30));
+        heroTitle = label("", 42, Typeface.BOLD);
+        heroTitle.setIncludeFontPadding(false);
+        heroTitle.setMaxLines(2);
+        heroTitle.setEllipsize(TextUtils.TruncateAt.END);
+        hero.addView(heroTitle, heroAt(0, 28, 840, 104));
+        heroMeta = label("", 23, Typeface.NORMAL);
+        heroMeta.setSingleLine(true);
+        heroMeta.setEllipsize(TextUtils.TruncateAt.END);
+        hero.addView(heroMeta, heroAt(0, 138, 820, 28));
+        heroResume = label("Resume", 24, Typeface.BOLD);
+        heroResume.setTextColor(0xFF101116);
+        heroResume.setGravity(Gravity.CENTER);
+        heroResume.setFocusable(true);
+        heroResume.setBackground(buttonBackground(false));
+        heroResume.setOnFocusChangeListener((v, has) -> {
+            heroResume.setBackground(buttonBackground(has));
+            if (has) focused.run();
+        });
+        heroResume.setOnClickListener(v -> { if (heroItem != null) open(heroItem); });
+        heroResume.setOnKeyListener((v, key, event) -> {
+            if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
+            if (key == KeyEvent.KEYCODE_DPAD_UP) { up.run(); return true; }
+            if (key == KeyEvent.KEYCODE_DPAD_DOWN) { focusFirst(); return true; }
+            return key == KeyEvent.KEYCODE_DPAD_LEFT || key == KeyEvent.KEYCODE_DPAD_RIGHT;
+        });
+        hero.addView(heroResume, heroAt(0, 172, 180, 42));
+        addView(hero, new LayoutParams(-1, px(230)));
+        heading = label("Continue watching", 36, Typeface.BOLD);
         addView(heading);
         message = label("", 24, Typeface.NORMAL);
         message.setPadding(0, px(12), 0, px(16));
@@ -83,6 +131,60 @@ final class WatchNextShelf extends LinearLayout {
         addView(scroll, new LayoutParams(-1, -2));
     }
 
+    private FrameLayout.LayoutParams heroAt(int x, int y, int width, int height) {
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(px(width), px(height));
+        lp.leftMargin = px(x); lp.topMargin = px(y); return lp;
+    }
+
+    void configure(String value) {
+        layout = value;
+        heading.setTextSize(TypedValue.COMPLEX_UNIT_PX, px("shelves".equals(layout) ? 44 : 34));
+        if (!"cinematic".equals(layout)) hero.setVisibility(View.GONE);
+    }
+
+    private GradientDrawable buttonBackground(boolean hasFocus) {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setColor(hasFocus ? Color.WHITE : 0xE8FFFFFF);
+        shape.setCornerRadius(px(12));
+        if (hasFocus) shape.setStroke(px(3), 0xFFB8C6E3);
+        return shape;
+    }
+
+    private void showHero(Item item) {
+        if (!"cinematic".equals(layout)) return;
+        hero.setVisibility(View.VISIBLE);
+        if (heroItem == item) return;
+        heroItem = item;
+        heroService.setText(item.service);
+        heroTitle.setText(item.title);
+        heroMeta.setText(resumeLabel(item));
+        heroResume.setText(item.type == 0 ? "Resume" : "Watch next");
+        heroImage.setImageDrawable(null);
+        int request = ++heroGeneration;
+        int feedRequest = generation;
+        artwork.execute(() -> {
+            Bitmap bitmap = ResumeArtwork.load(activity.getApplicationContext(), item.poster);
+            if (bitmap == null) bitmap = ResumeArtwork.load(activity.getApplicationContext(), item.thumbnail);
+            final Bitmap image = bitmap;
+            activity.runOnUiThread(() -> {
+                if (active && request == heroGeneration && feedRequest == generation)
+                    heroImage.setImageBitmap(image);
+            });
+        });
+    }
+
+    private String resumeLabel(Item item) {
+        String resume = item.type == 1 ? "Next episode" : item.type == 2 ? "New episode" : "Resume";
+        if (item.position > 0) resume += " · " + item.position / 60000 + " min watched";
+        if (item.duration > 0) resume += (item.position > 0 ? " of " : " · ") + item.duration / 60000 + " min";
+        return resume;
+    }
+
+    private void open(Item item) {
+        try { activity.startActivity(item.intent); }
+        catch (Exception e) { Toast.makeText(activity, "This title is unavailable. Open " + item.service + " below.", Toast.LENGTH_LONG).show(); }
+    }
+
     private int px(int value) { return Math.round(value * scale); }
     private TextView label(String value, int size, int style) {
         TextView text = new TextView(activity);
@@ -108,12 +210,17 @@ final class WatchNextShelf extends LinearLayout {
         message.setFocusable(needsPermission);
         message.setClickable(needsPermission);
         if (needsPermission) {
+            hero.setVisibility(View.GONE);
+            message.setVisibility(View.VISIBLE);
             cards.removeAllViews();
             message.setText("Allow TV listings access to show Continue watching. Select here to allow.");
             return;
         }
         message.setBackground(null);
-        message.setText("Looking for recently watched videos and movies…");
+        if (cards.getChildCount() == 0) {
+            message.setVisibility(View.VISIBLE);
+            message.setText("Looking for recently watched videos and movies…");
+        }
         new Thread(() -> {
             List<Item> items = new ArrayList<>();
             String error = null;
@@ -179,6 +286,8 @@ final class WatchNextShelf extends LinearLayout {
             final String result = error;
             activity.runOnUiThread(() -> {
                 if (!active || request != generation || activity.isFinishing()) return;
+                boolean heroWasFocused = heroResume.hasFocus();
+                Item previousHero = heroItem;
                 int selected = -1;
                 for (int i = 0; i < cards.getChildCount(); i++)
                     if (cards.getChildAt(i).hasFocus()) selected = i;
@@ -188,9 +297,23 @@ final class WatchNextShelf extends LinearLayout {
                 message.setText(result != null ? result : items.isEmpty()
                         ? "No shared resume entries available. Only apps that publish viewing activity can appear."
                         : "From apps that share activity with Android TV. Some services may not appear.");
+                boolean populated = result == null && !items.isEmpty();
+                message.setVisibility(populated ? View.GONE : View.VISIBLE);
+                heroItem = null;
+                hero.setVisibility(View.GONE);
                 if (result == null) for (Item item : items) addCard(item);
+                if (populated) {
+                    Item restoreHero = items.get(0);
+                    if (heroWasFocused && previousHero != null)
+                        for (Item item : items)
+                            if (item.intent.filterEquals(previousHero.intent)) { restoreHero = item; break; }
+                    showHero(restoreHero);
+                }
                 setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
-                if (selected >= 0) {
+                if (heroWasFocused) {
+                    if (populated && "cinematic".equals(layout)) heroResume.requestFocus();
+                    else down.run();
+                } else if (selected >= 0) {
                     if (cards.getChildCount() > 0)
                         cards.getChildAt(Math.min(selected, cards.getChildCount() - 1)).requestFocus();
                     else down.run();
@@ -206,9 +329,15 @@ final class WatchNextShelf extends LinearLayout {
     private void addCard(Item item) {
         LinearLayout card = new LinearLayout(activity);
         card.setOrientation(VERTICAL);
-        card.setPadding(px(16), px(12), px(16), px(12));
+        boolean cinematic = "cinematic".equals(layout);
+        boolean shelves = "shelves".equals(layout);
+        card.setPadding(px(10), px(8), px(10), px(8));
         FrameLayout imageBox = new FrameLayout(activity);
-        imageBox.setBackgroundColor(0xFF14191F);
+        GradientDrawable imageBackground = new GradientDrawable();
+        imageBackground.setColor(0xFF20232B);
+        imageBackground.setCornerRadius(px(16));
+        imageBox.setBackground(imageBackground);
+        imageBox.setClipToOutline(true);
         ImageView image = new ImageView(activity);
         image.setScaleType(ImageView.ScaleType.CENTER_CROP);
         image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
@@ -217,7 +346,7 @@ final class WatchNextShelf extends LinearLayout {
         catch (Exception ignored) {}
         image.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         imageBox.addView(image, new FrameLayout.LayoutParams(-1, -1));
-        card.addView(imageBox, new LayoutParams(-1, px(198)));
+        card.addView(imageBox, new LayoutParams(-1, px(cinematic ? 166 : shelves ? 275 : 220)));
         final int request = generation;
         artwork.execute(() -> {
             Bitmap result = ResumeArtwork.load(activity.getApplicationContext(), item.thumbnail);
@@ -234,15 +363,14 @@ final class WatchNextShelf extends LinearLayout {
         service.setEllipsize(TextUtils.TruncateAt.END);
         service.setPadding(0, px(5), 0, 0);
         card.addView(service);
-        TextView title = label(item.title, 25, Typeface.BOLD);
-        title.setMaxLines(2);
+        TextView title = label(item.title, cinematic ? 23 : 27, Typeface.BOLD);
+        title.setIncludeFontPadding(false);
+        title.setMaxLines(cinematic ? 1 : 2);
         title.setEllipsize(TextUtils.TruncateAt.END);
-        LayoutParams titlePosition = new LayoutParams(-1, px(58));
+        LayoutParams titlePosition = new LayoutParams(-1, px(cinematic ? 30 : 68));
         titlePosition.topMargin = px(3);
         card.addView(title, titlePosition);
-        String resume = item.type == 1 ? "Next episode" : item.type == 2 ? "New episode" : "Resume";
-        if (item.position > 0) resume += " · " + item.position / 60000 + " min watched";
-        if (item.duration > 0) resume += (item.position > 0 ? " of " : " · ") + item.duration / 60000 + " min";
+        String resume = resumeLabel(item);
         TextView detail = label(resume, 19, Typeface.NORMAL);
         detail.setSingleLine(true);
         detail.setEllipsize(TextUtils.TruncateAt.END);
@@ -252,29 +380,35 @@ final class WatchNextShelf extends LinearLayout {
         card.setBackground(background(false));
         card.setOnFocusChangeListener((view, has) -> {
             card.setBackground(background(has));
-            if (has) focused.run();
+            float zoom = has ? 1.035f : 1f;
+            float animationScale = Build.VERSION.SDK_INT >= 26 ? ValueAnimator.getDurationScale() : 1;
+            card.animate().scaleX(zoom).scaleY(zoom).translationZ(has ? px(10) : 0)
+                    .setDuration(animationScale == 0 ? 0 : 180).start();
+            if (has) { focused.run(); showHero(item); }
         });
         card.setOnKeyListener((v, key, event) -> {
             if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
-            if (key == KeyEvent.KEYCODE_DPAD_UP) { up.run(); return true; }
+            if (key == KeyEvent.KEYCODE_DPAD_UP) {
+                if ("cinematic".equals(layout) && hero.getVisibility() == View.VISIBLE) heroResume.requestFocus();
+                else up.run();
+                return true;
+            }
             if (key == KeyEvent.KEYCODE_DPAD_DOWN) { down.run(); return true; }
             return (key == KeyEvent.KEYCODE_DPAD_LEFT && cards.indexOfChild(v) == 0)
                     || (key == KeyEvent.KEYCODE_DPAD_RIGHT && cards.indexOfChild(v) == cards.getChildCount() - 1);
         });
-        card.setOnClickListener(v -> {
-            try { activity.startActivity(item.intent); }
-            catch (Exception e) { Toast.makeText(activity, "This title is unavailable. Open " + item.service + " below.", Toast.LENGTH_LONG).show(); }
-        });
-        LayoutParams position = new LayoutParams(px(384), px(344));
+        card.setOnClickListener(v -> open(item));
+        LayoutParams position = new LayoutParams(px(cinematic ? 390 : shelves ? 520 : 420),
+                px(cinematic ? 272 : shelves ? 420 : 360));
         position.rightMargin = px(24);
         cards.addView(card, position);
     }
 
     private GradientDrawable background(boolean focused) {
         GradientDrawable shape = new GradientDrawable();
-        shape.setColor(0xED20242B);
+        shape.setColor(focused ? 0x192A303D : 0x00000000);
         shape.setCornerRadius(px(16));
-        shape.setStroke(px(focused ? 4 : 1), focused ? Color.WHITE : 0x557A8490);
+        shape.setStroke(px(focused ? 4 : 1), focused ? Color.WHITE : 0x00000000);
         return shape;
     }
 

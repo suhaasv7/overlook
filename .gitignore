@@ -3,3 +3,8 @@ key.jks
 *.apk
 .DS_Store
 .idea
+
+# Local design captures and tooling state can contain viewing activity.
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/build/

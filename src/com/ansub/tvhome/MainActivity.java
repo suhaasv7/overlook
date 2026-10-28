@@ -124,6 +124,8 @@ public class MainActivity extends Activity {
 
     private FrameLayout root; // the page of tiles, which slides up when you move down past the top row
     private Wallpaper wallpaper;
+    private View v2Backdrop, appDock;
+    private TextView appHeading;
     private View dim;            // darkens the photo while the lower rows show
     private View nightDim;       // darkens the photo at night, if that's on
     private TextView greeting;   // "Hi <name>", top left
@@ -189,6 +191,10 @@ public class MainActivity extends Activity {
         shade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                 new int[] {0x66000000, 0x00000000, 0x00000000, 0x8C000000, 0xCC000000}));
         screen.addView(shade, new FrameLayout.LayoutParams(-1, -1));
+        v2Backdrop = new View(this);
+        v2Backdrop.setBackgroundColor(0xFF101116);
+        v2Backdrop.setVisibility(View.GONE);
+        screen.addView(v2Backdrop, new FrameLayout.LayoutParams(-1, -1));
         nightDim = new View(this);
         nightDim.setBackgroundColor(0x73000000);
         nightDim.setVisibility(View.GONE);
@@ -260,6 +266,19 @@ public class MainActivity extends Activity {
             weatherReady = true;
             weatherBox.setVisibility(on("weather", true) ? View.VISIBLE : View.GONE);
         });
+
+        appDock = new View(this);
+        GradientDrawable dock = new GradientDrawable();
+        dock.setColor(0x99212630);
+        dock.setCornerRadius(px(28));
+        appDock.setBackground(dock);
+        appDock.setVisibility(View.GONE);
+        root.addView(appDock, at(px(MARGIN - 18), px(840),
+                getResources().getDisplayMetrics().widthPixels - px(2 * MARGIN - 36), px(214)));
+        appHeading = text(px(30), 0xF5FFFFFF, semibold);
+        appHeading.setText("Your apps");
+        appHeading.setVisibility(View.GONE);
+        root.addView(appHeading, at(px(MARGIN), px(803), -2, -2));
 
         moveHint = text(px(24), 0xA8FFFFFF, regular);
         moveHint.setShadowLayer(px(8), 0, px(2), 0x99000000);
@@ -466,7 +485,7 @@ public class MainActivity extends Activity {
         ownOrder.addAll(apps);
         if (byUse()) sortByUse(apps);
         // Apps fill rows of six, then Play Store, HDMI inputs and Add app follow on.
-        gridTop = px(ROW1_TOP);
+        gridTop = px(isV2() ? 860 : ROW1_TOP);
         ((FrameLayout.LayoutParams) moveHint.getLayoutParams()).topMargin = gridTop - px(64);
 
         for (String pkg : apps) {
@@ -722,12 +741,15 @@ public class MainActivity extends Activity {
     private void open(String key) {
         Intent i;
         if (VERSION.equals(key)) {
-            panel("Home screen version", java.util.Arrays.asList(
-                    (isV2() ? "" : "✓ ") + "v1 · Classic home",
-                    (isV2() ? "✓ " : "") + "v2 · Continue watching"), null, which -> {
-                setOpt("version", which == 1 ? "v2" : "v1");
+            panel("Home screen & layout", java.util.Arrays.asList(
+                    selectedLayout("cinematic") + "v2 · Cinematic spotlight",
+                    selectedLayout("shelves") + "v2 · Artwork first",
+                    selectedLayout("scenic") + "v2 · Scenic dock",
+                    (isV2() ? "" : "✓ ") + "v1 · Classic home"), null, which -> {
+                setOpt("version", which == 3 ? "v1" : "v2");
+                if (which < 3) setOpt("layout", new String[] {"cinematic", "shelves", "scenic"}[which]);
                 buildTiles();
-            }, null, "Your apps and settings stay the same in both versions.");
+            }, null, "Newest version first. Your layout choice is saved.");
             return;
         } else if (ADD.equals(key)) {
             showAddMenu(-1);
@@ -1567,15 +1589,39 @@ public class MainActivity extends Activity {
 
     private boolean isV2() { return "v2".equals(opt("version", "v1")); }
 
+    private String v2Layout() {
+        String layout = opt("layout", "cinematic");
+        return "shelves".equals(layout) || "scenic".equals(layout) ? layout : "cinematic";
+    }
+
+    private String selectedLayout(String layout) {
+        return isV2() && layout.equals(v2Layout()) ? "✓ " : "";
+    }
+
     private void refreshVersion() {
         if (watchNext == null) return;
-        watchNext.setVisibility(isV2() && shownRow <= 0 ? View.VISIBLE : View.GONE);
-        if (isV2()) watchNext.refresh(); else watchNext.stop();
+        boolean v2 = isV2();
+        String layout = v2Layout();
+        clockTime.setTextSize(TypedValue.COMPLEX_UNIT_PX, px(v2 ? 92 : 76));
+        clockDate.setTextSize(TypedValue.COMPLEX_UNIT_PX, px(v2 ? 30 : 28));
+        v2Backdrop.setVisibility(v2 && !"scenic".equals(layout) ? View.VISIBLE : View.GONE);
+        appHeading.setVisibility(v2 && shownRow <= 0 ? View.VISIBLE : View.GONE);
+        appDock.setVisibility(v2 && "scenic".equals(layout) && shownRow <= 0 ? View.VISIBLE : View.GONE);
+        int top = "cinematic".equals(layout) ? 230 : "shelves".equals(layout) ? 300 : 340;
+        FrameLayout.LayoutParams position = (FrameLayout.LayoutParams) watchNext.getLayoutParams();
+        position.topMargin = px(top);
+        position.height = px(800 - top);
+        watchNext.setLayoutParams(position);
+        watchNext.configure(layout);
+        watchNext.setVisibility(v2 && shownRow <= 0 ? View.VISIBLE : View.GONE);
+        if (v2) watchNext.refresh(); else watchNext.stop();
     }
 
     private void showRow(int row) {
         shownRow = row;
         if (watchNext != null) watchNext.setVisibility(isV2() && row == 0 ? View.VISIBLE : View.GONE);
+        if (appHeading != null) appHeading.setVisibility(isV2() && row == 0 ? View.VISIBLE : View.GONE);
+        if (appDock != null) appDock.setVisibility(isV2() && "scenic".equals(v2Layout()) && row == 0 ? View.VISIBLE : View.GONE);
         boolean down = row > 0;
         float y = down ? -(gridTop - px(PAGE_TOP)) - Math.max(0, row - 3) * px(ROW_STEP) : 0;
         root.animate().translationY(y).setDuration(ms(450)).start();
