@@ -61,3 +61,7 @@ Removed the Your apps heading. The app dock and icons remain in place.
 ### 1.6.3
 
 V1 gains the same Watch Next source in a compact row, preserving classic styling. Shared resume captions are simplified to app name and one-line title in both versions; numeric playback details are no longer displayed visually.
+
+### 1.6.4
+
+The shared Continue watching header now includes Refresh. Up from a card reaches Refresh; Up again reaches top controls. Manual refresh rereads the TV provider, keeps cards during loading and restores button focus.

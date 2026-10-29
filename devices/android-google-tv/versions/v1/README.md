@@ -10,4 +10,8 @@ The original source is preserved in Git history at the baseline commit; the main
 
 ## 1.6.3: classic plus Continue watching
 
-V1 now adds one compact Continue watching row to the original home layout. Wallpaper treatment, clock/date, top controls, app sizing/positions and app focus behavior stay as before. Resume cards show a thumbnail, app name and one-line title; numeric playback counters remain only in accessibility descriptions. Up from apps reaches resume cards, Up again reaches controls, and Down returns to apps. Watch Next needs TV listings permission and depends on app contributions.
+V1 now adds one compact Continue watching row to the original home layout. Wallpaper treatment, clock/date, top controls, app sizing/positions and app focus behavior stay as before. Resume cards show a thumbnail, app name and one-line title; numeric playback counters remain only in accessibility descriptions. Up from apps reaches resume cards; further Up reaches Refresh, then the top controls. Down returns toward cards and apps. Watch Next needs TV listings permission and depends on app contributions.
+
+## 1.6.4: manual refresh
+
+Select **Refresh** beside Continue watching to query the TV's shared Watch Next feed again. Existing cards stay visible during the query, the button shows Refreshing while loading, duplicate concurrent requests are ignored, and remote focus returns to the button when complete. Empty/error messages remain available when the provider has no usable entries. Tested on the TV: pressing Refresh produced a fresh provider query and retained button focus afterward.

@@ -126,3 +126,7 @@ The final 1.6.1 native source and screenshots `tv-scenic-compact.png` and `tv-sc
 ## V1 classic + resume (1.6.3)
 
 V1 retains its original clock/date, app positions/sizes, controls, wallpaper treatment and focus behavior. The only new surface is a resume row at y420 in 1920×1080 design coordinates: 340×260 cards, 180px image, app name and one-line 22px title. No visible playback counters. V2 uses the same quiet captions with its existing Scenic styling. Actual-device screenshots are required after each installed UI change and must be shown to the user.
+
+## Manual refresh (1.6.4)
+
+A compact text-only Refresh button sits 24 design pixels after the Continue watching heading. It uses 20px text, 42px height, 140px minimum width and a 10px corner radius. Resting background is translucent black; focus is white with dark text. Refreshing text replaces Refresh while a query runs. Focus order is apps → cards → Refresh → controls. Existing cards remain visible while loading. Actual TV query/focus behavior and screenshot were checked.

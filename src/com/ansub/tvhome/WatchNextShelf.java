@@ -14,6 +14,7 @@ import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.Gravity;
 import android.animation.ValueAnimator;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
@@ -36,10 +37,11 @@ final class WatchNextShelf extends LinearLayout {
     private final Activity activity;
     private final float scale;
     private final Runnable up, down, focused;
-    private final TextView message, heading;
+    private final TextView message, heading, refreshButton;
     private final LinearLayout cards;
     private int generation;
     private boolean active;
+    private boolean loading;
     private boolean classic;
     private final ThreadPoolExecutor artwork = new ThreadPoolExecutor(2, 2, 15, TimeUnit.SECONDS,
             new ArrayBlockingQueue<Runnable>(40), r -> {
@@ -57,7 +59,35 @@ final class WatchNextShelf extends LinearLayout {
         this.focused = focused;
         setOrientation(VERTICAL);
         heading = label("Continue watching", 36, Typeface.BOLD);
-        addView(heading);
+        LinearLayout header = new LinearLayout(activity);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.addView(heading);
+        refreshButton = label("Refresh", 20, Typeface.NORMAL);
+        refreshButton.setContentDescription("Refresh Continue watching");
+        refreshButton.setGravity(Gravity.CENTER);
+        refreshButton.setPadding(px(16), 0, px(16), 0);
+        refreshButton.setMinWidth(px(140));
+        refreshButton.setFocusable(true);
+        refreshButton.setBackground(refreshBackground(false));
+        refreshButton.setOnFocusChangeListener((v, has) -> {
+            refreshButton.setBackground(refreshBackground(has));
+            refreshButton.setTextColor(has ? 0xFF101116 : Color.WHITE);
+            if (has) focused.run();
+        });
+        refreshButton.setOnClickListener(v -> { if (!loading) refresh(); });
+        refreshButton.setOnKeyListener((v, key, event) -> {
+            if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
+            if (key == KeyEvent.KEYCODE_DPAD_UP) { up.run(); return true; }
+            if (key == KeyEvent.KEYCODE_DPAD_DOWN) {
+                if (!focusContent()) down.run();
+                return true;
+            }
+            return key == KeyEvent.KEYCODE_DPAD_LEFT || key == KeyEvent.KEYCODE_DPAD_RIGHT;
+        });
+        LayoutParams refreshPosition = new LayoutParams(-2, px(42));
+        refreshPosition.leftMargin = px(24);
+        header.addView(refreshButton, refreshPosition);
+        addView(header);
         message = label("", 22, Typeface.NORMAL);
         message.setPadding(0, px(12), 0, px(16));
         message.setOnClickListener(v -> {
@@ -112,14 +142,35 @@ final class WatchNextShelf extends LinearLayout {
         return text;
     }
 
-    void stop() { active = false; generation++; artwork.getQueue().clear(); }
-    boolean focusFirst() {
+    void stop() {
+        active = false; generation++; artwork.getQueue().clear();
+        setLoading(false);
+    }
+
+    private GradientDrawable refreshBackground(boolean hasFocus) {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setColor(hasFocus ? Color.WHITE : 0x55000000);
+        shape.setCornerRadius(px(10));
+        return shape;
+    }
+
+    private void setLoading(boolean value) {
+        loading = value;
+        refreshButton.setText(value ? "Refreshing…" : "Refresh");
+    }
+
+    private boolean focusContent() {
         if (getVisibility() != View.VISIBLE) return false;
         if (message.isFocusable()) return message.requestFocus();
         return cards.getChildCount() > 0 && cards.getChildAt(0).requestFocus();
     }
+    boolean focusFirst() {
+        if (getVisibility() != View.VISIBLE) return false;
+        return focusContent() || refreshButton.requestFocus();
+    }
 
     void refresh() {
+        if (loading) return;
         active = true;
         final int request = ++generation;
         boolean needsPermission = Build.VERSION.SDK_INT >= 26 && activity.checkSelfPermission(
@@ -132,6 +183,7 @@ final class WatchNextShelf extends LinearLayout {
             message.setText("Allow TV listings access to show Continue watching. Select here to allow.");
             return;
         }
+        setLoading(true);
         message.setBackground(null);
         if (cards.getChildCount() == 0) {
             message.setVisibility(View.VISIBLE);
@@ -202,6 +254,8 @@ final class WatchNextShelf extends LinearLayout {
             final String result = error;
             activity.runOnUiThread(() -> {
                 if (!active || request != generation || activity.isFinishing()) return;
+                setLoading(false);
+                boolean refreshFocused = refreshButton.hasFocus();
                 int selected = -1;
                 for (int i = 0; i < cards.getChildCount(); i++)
                     if (cards.getChildAt(i).hasFocus()) selected = i;
@@ -215,7 +269,8 @@ final class WatchNextShelf extends LinearLayout {
                 message.setVisibility(populated ? View.GONE : View.VISIBLE);
                 if (result == null) for (Item item : items) addCard(item);
                 setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
-                if (selected >= 0) {
+                if (refreshFocused) refreshButton.requestFocus();
+                else if (selected >= 0) {
                     if (cards.getChildCount() > 0)
                         cards.getChildAt(Math.min(selected, cards.getChildCount() - 1)).requestFocus();
                     else down.run();
@@ -291,7 +346,7 @@ final class WatchNextShelf extends LinearLayout {
         card.setOnKeyListener((v, key, event) -> {
             if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
             if (key == KeyEvent.KEYCODE_DPAD_UP) {
-                up.run();
+                refreshButton.requestFocus();
                 return true;
             }
             if (key == KeyEvent.KEYCODE_DPAD_DOWN) { down.run(); return true; }

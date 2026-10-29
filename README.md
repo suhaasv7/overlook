@@ -179,3 +179,5 @@ If the TV is stuck restarting, see [TV Detox's help](https://github.com/Ansub/tv
   each under its own free licence.
 
 MIT License, see [LICENSE](LICENSE).
+
+The **Refresh** button beside Continue watching reloads the TV’s shared viewing feed. It is available in v1 and v2.
