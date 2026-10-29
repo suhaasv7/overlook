@@ -648,7 +648,7 @@ public class MainActivity extends Activity {
                 return true;
             }
             if (down && code == KeyEvent.KEYCODE_DPAD_UP && rowOf(v) == 0
-                    && isV2() && watchNext.focusFirst()) return true;
+                    && watchNext.focusFirst()) return true;
             if (!ok) return false;
             if (down) {
                 if (ev.getRepeatCount() == 0) longPressed = false;
@@ -736,7 +736,7 @@ public class MainActivity extends Activity {
         chip.setOnKeyListener((v, code, ev) -> {
             if (ev.getAction() != KeyEvent.ACTION_DOWN) return false;
             if (code == KeyEvent.KEYCODE_DPAD_DOWN) {
-                if (isV2() && watchNext.focusFirst()) return true;
+                if (watchNext.focusFirst()) return true;
                 View back = tile(lastGridKey);
                 (back != null ? back : tiles.get(0)).requestFocus();
                 return true;
@@ -1609,19 +1609,19 @@ public class MainActivity extends Activity {
         v2Backdrop.setVisibility(v2 ? View.VISIBLE : View.GONE);
         appHeading.setVisibility(View.GONE);
         appDock.setVisibility(v2 && shownRow <= 0 ? View.VISIBLE : View.GONE);
-        int top = 340;
+        int top = v2 ? 340 : 420;
         FrameLayout.LayoutParams position = (FrameLayout.LayoutParams) watchNext.getLayoutParams();
         position.topMargin = px(top);
         position.height = px(800 - top);
         watchNext.setLayoutParams(position);
-        watchNext.configure();
-        watchNext.setVisibility(v2 && shownRow <= 0 ? View.VISIBLE : View.GONE);
-        if (v2) watchNext.refresh(); else watchNext.stop();
+        watchNext.configure(!v2);
+        watchNext.setVisibility(shownRow <= 0 ? View.VISIBLE : View.GONE);
+        watchNext.refresh();
     }
 
     private void showRow(int row) {
         shownRow = row;
-        if (watchNext != null) watchNext.setVisibility(isV2() && row == 0 ? View.VISIBLE : View.GONE);
+        if (watchNext != null) watchNext.setVisibility(row == 0 ? View.VISIBLE : View.GONE);
         if (appHeading != null) appHeading.setVisibility(View.GONE);
         if (appDock != null) appDock.setVisibility(isV2() && row == 0 ? View.VISIBLE : View.GONE);
         boolean down = row > 0;

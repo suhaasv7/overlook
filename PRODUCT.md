@@ -36,3 +36,9 @@ Current native source, prior TV screenshots/runtime checks, shared thumbnails, a
 - Keep remote navigation predictable.
 - Preserve a familiar classic fallback.
 - Let content artwork lead without compromising readability.
+
+## Remote review workflow
+
+The user is away from the TV and uses a Tailscale ADB connection. After each installed UI change, capture the actual launcher screen (dismiss the screensaver using Home if needed), inspect it, and show the screenshot inline to the user. Do not substitute a screensaver capture for launcher evidence.
+
+Latest v1 direction: retain classic home styling and add only one quiet Continue watching row. Avoid the v2 dock or extra styling in v1. V2 remains available.

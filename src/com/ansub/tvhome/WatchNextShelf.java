@@ -40,6 +40,7 @@ final class WatchNextShelf extends LinearLayout {
     private final LinearLayout cards;
     private int generation;
     private boolean active;
+    private boolean classic;
     private final ThreadPoolExecutor artwork = new ThreadPoolExecutor(2, 2, 15, TimeUnit.SECONDS,
             new ArrayBlockingQueue<Runnable>(40), r -> {
                 Thread t = new Thread(r, "overlook-resume-art"); t.setDaemon(true); return t;
@@ -84,7 +85,8 @@ final class WatchNextShelf extends LinearLayout {
         addView(scroll, new LayoutParams(-1, -2));
     }
 
-    void configure() {
+    void configure(boolean classic) {
+        this.classic = classic;
         heading.setTextSize(TypedValue.COMPLEX_UNIT_PX, px(30));
     }
 
@@ -244,7 +246,7 @@ final class WatchNextShelf extends LinearLayout {
         catch (Exception ignored) {}
         image.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         imageBox.addView(image, new FrameLayout.LayoutParams(-1, -1));
-        card.addView(imageBox, new LayoutParams(-1, px(198)));
+        card.addView(imageBox, new LayoutParams(-1, px(classic ? 180 : 198)));
         final int request = generation;
         artwork.execute(() -> {
             Bitmap result = ResumeArtwork.load(activity.getApplicationContext(), item.thumbnail);
@@ -261,17 +263,19 @@ final class WatchNextShelf extends LinearLayout {
         service.setEllipsize(TextUtils.TruncateAt.END);
         service.setPadding(0, px(5), 0, 0);
         card.addView(service);
-        TextView title = label(item.title, 24, Typeface.BOLD);
+        TextView title = label(item.title, classic ? 22 : 24, Typeface.BOLD);
         title.setIncludeFontPadding(false);
-        title.setMaxLines(2);
+        title.setMaxLines(1);
         title.setEllipsize(TextUtils.TruncateAt.END);
-        LayoutParams titlePosition = new LayoutParams(-1, px(62));
+        LayoutParams titlePosition = new LayoutParams(-1, px(30));
         titlePosition.topMargin = px(3);
         card.addView(title, titlePosition);
         String resume = resumeLabel(item);
         TextView detail = label(resume, 18, Typeface.NORMAL);
         detail.setSingleLine(true);
         detail.setEllipsize(TextUtils.TruncateAt.END);
+        // Playback position remains in the accessibility description; keep the visual row quiet.
+        detail.setVisibility(View.GONE);
         card.addView(detail);
         card.setFocusable(true);
         card.setContentDescription(item.title + ", " + item.service + ", " + resume);
@@ -295,8 +299,8 @@ final class WatchNextShelf extends LinearLayout {
                     || (key == KeyEvent.KEYCODE_DPAD_RIGHT && cards.indexOfChild(v) == cards.getChildCount() - 1);
         });
         card.setOnClickListener(v -> open(item));
-        LayoutParams position = new LayoutParams(px(376),
-                px(332));
+        LayoutParams position = new LayoutParams(px(classic ? 340 : 376),
+                px(classic ? 260 : 280));
         position.rightMargin = px(22);
         cards.addView(card, position);
     }

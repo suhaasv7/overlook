@@ -57,3 +57,7 @@ Build/signature verification and in-place TV update passed. Actual TV screenshot
 ### 1.6.2
 
 Removed the Your apps heading. The app dock and icons remain in place.
+
+### 1.6.3
+
+V1 gains the same Watch Next source in a compact row, preserving classic styling. Shared resume captions are simplified to app name and one-line title in both versions; numeric playback details are no longer displayed visually.

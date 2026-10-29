@@ -122,3 +122,7 @@ The final 1.6.1 native source and screenshots `tv-scenic-compact.png` and `tv-sc
 ## App dock heading
 
 1.6.2 removes the Your apps label; the dock shows app icons without a section heading.
+
+## V1 classic + resume (1.6.3)
+
+V1 retains its original clock/date, app positions/sizes, controls, wallpaper treatment and focus behavior. The only new surface is a resume row at y420 in 1920×1080 design coordinates: 340×260 cards, 180px image, app name and one-line 22px title. No visible playback counters. V2 uses the same quiet captions with its existing Scenic styling. Actual-device screenshots are required after each installed UI change and must be shown to the user.

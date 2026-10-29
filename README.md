@@ -79,7 +79,7 @@ installed, it's replaced, because the two are signed with different keys.
 
 ## Home screen versions
 
-The top-right version control lists **v2 · Scenic dock** first, followed by **v1 · Classic home**. V2 uses compact artwork cards and app tiles, a large live clock/date, and wallpaper that darkens progressively toward the bottom. The choice is saved; v1 is the default for new installations. V2 reads shared Android TV Watch Next entries when permitted; services may expose no activity. On the tested Android TV 9 device, real YouTube, Crunchyroll and JioHotstar entries appeared.
+The top-right version control lists **v2 · Scenic dock** first, followed by **v1 · Classic home** (original styling plus a compact Continue watching row). V2 uses compact artwork cards and app tiles, a large live clock/date, and wallpaper that darkens progressively toward the bottom. The choice is saved; v1 is the default for new installations. V2 reads shared Android TV Watch Next entries when permitted; services may expose no activity. On the tested Android TV 9 device, real YouTube, Crunchyroll and JioHotstar entries appeared.
 
 
 See [Android TV / Google TV versions](devices/android-google-tv/README.md). V2 has been checked on Android TV 9: switching layouts, selection persistence, the TV listings permission flow and real shared YouTube entries. Select the shelf access message and allow TV listings when prompted. Other services depend on the entries they share.
