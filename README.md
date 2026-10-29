@@ -98,13 +98,20 @@ See [Android TV / Google TV versions](devices/android-google-tv/README.md). V2 h
 
 Bluetooth, sound and picture shortcuts remain available through **•••** extras.
 
-## PatchWall info overlay on Mi TV
+## PatchWall shortcuts on Mi TV
 
 On the verified MiTV-AXSO0, PatchWall can show the time and weather over the current app: a
 full-screen translucent grey layer with a floating clock and weather at the top right, sliding
 in from the right and back out when dismissed. It closes on another press or after eight seconds. After
 installing the APK, opt in with `sh overlay.sh <TV_IP> on`. This needs a one-time ADB log permission
-and the Overlook accessibility service. See [the Mi TV setup](devices/legacy/mi-tv.md#patchwall-time-and-weather-overlay-23-october-2026).
+and the Overlook accessibility service.
+
+Starting with 1.6.7, a short press retains the info overlay and a held press requests Android's
+system recent-apps screen, where the system supplies task dismissal controls. It does not clear
+app data or force-stop packages. Xiaomi's bridge infers a hold from the vendor's down/repeat/up
+log sequence; physical-remote validation is still required. The system's phone-style Recents
+screen on this firmware has close controls, but their directional-remote accessibility is not yet
+verified. See [the Mi TV setup](devices/legacy/mi-tv.md#patchwall-time-and-weather-overlay-23-october-2026).
 
 ## Make it yours
 

@@ -34,7 +34,7 @@ import android.widget.LinearLayout;
 import android.widget.TextClock;
 import android.widget.TextView;
 
-/** Optional global shortcut. Never opens an Activity or takes focus from the playing app. */
+/** Global PatchWall shortcuts: short press shows information, hold opens system Recents. */
 public final class InfoOverlayService extends AccessibilityService {
     private final Handler main = new Handler(Looper.getMainLooper());
     private WindowManager windows;
@@ -51,7 +51,16 @@ public final class InfoOverlayService extends AccessibilityService {
     private boolean exiting;
     private volatile int bridgeGeneration;
     private volatile java.lang.Process bridgeProcess;
-    private long lastBridgePress;
+    private int bridgeEvents;
+    private long bridgeDownAt;
+    private boolean bridgeCompleted, bridgeLongOpened, keyLongOpened;
+    private final Runnable keyLongPress = () -> {
+        if (heldKey != -1) { keyLongOpened = true; showRecents(); }
+    };
+    private final Runnable finishBridgePress = () -> {
+        if (bridgeCompleted && bridgeEvents >= 2 && !bridgeLongOpened) toggle();
+        bridgeEvents = 0; bridgeCompleted = false; bridgeLongOpened = false;
+    };
     private final SharedPreferences.OnSharedPreferenceChangeListener configChanged = (prefs, key) -> {
         if ("o.patchwall_bridge".equals(key) || "o.patchwall_key".equals(key))
             main.post(() -> { updateKeyFiltering(); restartBridge(); });
@@ -105,7 +114,12 @@ public final class InfoOverlayService extends AccessibilityService {
             return false;
         // Keep consuming the matching up event even if configuration changes while held.
         if (code == heldKey) {
-            if (event.getAction() == KeyEvent.ACTION_UP) heldKey = -1;
+            if (event.getAction() == KeyEvent.ACTION_UP) {
+                main.removeCallbacks(keyLongPress);
+                heldKey = -1;
+                if (!keyLongOpened) toggle();
+                keyLongOpened = false;
+            }
             return true;
         }
         int configured;
@@ -115,7 +129,8 @@ public final class InfoOverlayService extends AccessibilityService {
         if (!allowed(configured) || code != configured || event.getAction() != KeyEvent.ACTION_DOWN
                 || event.getRepeatCount() != 0) return false;
         heldKey = code;
-        toggle();
+        keyLongOpened = false;
+        main.postDelayed(keyLongPress, android.view.ViewConfiguration.getLongPressTimeout());
         return true;
     }
 
@@ -126,9 +141,11 @@ public final class InfoOverlayService extends AccessibilityService {
     }
 
     // Android 9 Mi TV sends PatchWall to Xiaomi's explicit GlobalKeyReceiver before key filters.
-    // Read only that tag, from now onward, and react to its one key-up message. No logs are kept.
+    // Read only that tag, from now onward, and recognize its down/repeat/up message sequence. No logs are kept.
     private void restartBridge() {
         final int generation = ++bridgeGeneration;
+        main.removeCallbacks(finishBridgePress);
+        bridgeEvents = 0; bridgeCompleted = false; bridgeLongOpened = false;
         java.lang.Process previous = bridgeProcess;
         bridgeProcess = null;
         if (previous != null) previous.destroy();
@@ -145,13 +162,25 @@ public final class InfoOverlayService extends AccessibilityService {
                     try (BufferedReader lines = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                         String line;
                         while (generation == bridgeGeneration && (line = lines.readLine()) != null) {
-                            if (!"receiving KeyEvent.KEYCODE_BUTTON_2 start tvhome".equals(line.trim())) continue;
+                            final String entry = line.trim();
+                            if (!"receive ACTION_GLOBAL_BUTTON keyCode = 189".equals(entry)
+                                    && !"receiving KeyEvent.KEYCODE_BUTTON_2 start tvhome".equals(entry)) continue;
                             main.post(() -> {
                                 if (!connected || generation != bridgeGeneration || !bridgeEnabled()) return;
-                                long at = SystemClock.uptimeMillis();
-                                if (at - lastBridgePress < 350) return;
-                                lastBridgePress = at;
-                                toggle();
+                                if (entry.startsWith("receive ACTION_GLOBAL_BUTTON")) {
+                                    if (bridgeEvents == 0) bridgeDownAt = SystemClock.uptimeMillis();
+                                    bridgeEvents++;
+                                    // The vendor logs down, repeated down(s), then up; actions aren't exposed.
+                                    // A repeat or a held down/up pair identifies a long press.
+                                    if (!bridgeLongOpened && (bridgeEvents >= 3 || (bridgeEvents >= 2
+                                            && SystemClock.uptimeMillis() - bridgeDownAt
+                                            >= android.view.ViewConfiguration.getLongPressTimeout()))) {
+                                        bridgeLongOpened = true;
+                                        showRecents();
+                                    }
+                                } else bridgeCompleted = true;
+                                main.removeCallbacks(finishBridgePress);
+                                if (bridgeCompleted) main.postDelayed(finishBridgePress, 180);
                             });
                         }
                     }
@@ -166,6 +195,13 @@ public final class InfoOverlayService extends AccessibilityService {
         }, "overlook-mi-key");
         reader.setDaemon(true);
         reader.start();
+    }
+
+    private void showRecents() {
+        hide();
+        if (!performGlobalAction(GLOBAL_ACTION_RECENTS))
+            android.widget.Toast.makeText(this, "Recent apps is unavailable on this TV.",
+                    android.widget.Toast.LENGTH_LONG).show();
     }
 
     private static boolean allowed(int key) {
@@ -298,9 +334,14 @@ public final class InfoOverlayService extends AccessibilityService {
     }
 
     @Override public void onAccessibilityEvent(AccessibilityEvent event) { }
-    @Override public void onInterrupt() { removeOverlay(); heldKey = -1; }
+    @Override public void onInterrupt() {
+        main.removeCallbacks(keyLongPress);
+        main.removeCallbacks(finishBridgePress);
+        removeOverlay(); heldKey = -1;
+    }
     @Override public void onDestroy() {
         connected = false;
+        main.removeCallbacks(keyLongPress);
         restartBridge();
         getSharedPreferences("config", 0).unregisterOnSharedPreferenceChangeListener(configChanged);
         removeOverlay();
