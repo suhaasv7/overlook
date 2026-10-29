@@ -189,7 +189,7 @@ public class MainActivity extends Activity {
         // Keeps the clock and the apps readable on any photo: darker at the top and the bottom.
         View shade = new View(this);
         shade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[] {0x66000000, 0x00000000, 0x00000000, 0x8C000000, 0xCC000000}));
+                new int[] {0x66000000, 0x18000000, 0x80000000, 0xD9000000, 0xF5000000}));
         screen.addView(shade, new FrameLayout.LayoutParams(-1, -1));
         v2Backdrop = new View(this);
         v2Backdrop.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
