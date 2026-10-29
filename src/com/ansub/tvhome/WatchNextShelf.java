@@ -4,6 +4,9 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.database.ContentObserver;
+import android.os.Handler;
+import android.os.Looper;
 import android.graphics.Color;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
@@ -43,6 +46,16 @@ final class WatchNextShelf extends LinearLayout {
     private boolean active;
     private boolean loading;
     private boolean classic;
+    private boolean observing, pendingRefresh, manualRefresh;
+    private String snapshot;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable delayedRefresh = () -> { if (active) refresh(); };
+    private final ContentObserver observer = new ContentObserver(handler) {
+        @Override public void onChange(boolean selfChange) {
+            handler.removeCallbacks(delayedRefresh);
+            handler.postDelayed(delayedRefresh, 350);
+        }
+    };
     private final ThreadPoolExecutor artwork = new ThreadPoolExecutor(2, 2, 15, TimeUnit.SECONDS,
             new ArrayBlockingQueue<Runnable>(40), r -> {
                 Thread t = new Thread(r, "overlook-resume-art"); t.setDaemon(true); return t;
@@ -74,7 +87,7 @@ final class WatchNextShelf extends LinearLayout {
             refreshButton.setTextColor(has ? 0xFF101116 : Color.WHITE);
             if (has) focused.run();
         });
-        refreshButton.setOnClickListener(v -> { if (!loading) refresh(); });
+        refreshButton.setOnClickListener(v -> { manualRefresh = true; refresh(); });
         refreshButton.setOnKeyListener((v, key, event) -> {
             if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
             if (key == KeyEvent.KEYCODE_DPAD_UP) { up.run(); return true; }
@@ -144,6 +157,9 @@ final class WatchNextShelf extends LinearLayout {
 
     void stop() {
         active = false; generation++; artwork.getQueue().clear();
+        handler.removeCallbacks(delayedRefresh);
+        if (observing) activity.getContentResolver().unregisterContentObserver(observer);
+        observing = false; pendingRefresh = false; manualRefresh = false;
         setLoading(false);
     }
 
@@ -170,7 +186,7 @@ final class WatchNextShelf extends LinearLayout {
     }
 
     void refresh() {
-        if (loading) return;
+        if (loading) { pendingRefresh = true; return; }
         active = true;
         final int request = ++generation;
         boolean needsPermission = Build.VERSION.SDK_INT >= 26 && activity.checkSelfPermission(
@@ -182,6 +198,12 @@ final class WatchNextShelf extends LinearLayout {
             cards.removeAllViews();
             message.setText("Allow TV listings access to show Continue watching. Select here to allow.");
             return;
+        }
+        if (!observing && Build.VERSION.SDK_INT >= 26) {
+            try {
+                activity.getContentResolver().registerContentObserver(FEED, true, observer);
+                observing = true;
+            } catch (SecurityException ignored) { /* Refresh on Home remains available. */ }
         }
         setLoading(true);
         message.setBackground(null);
@@ -196,13 +218,13 @@ final class WatchNextShelf extends LinearLayout {
                 error = "Continue watching needs Android TV 8 or newer. Your apps are below.";
             } else {
                 String[] columns = {"package_name", "title", "intent_uri", "last_playback_position_millis",
-                        "duration_millis", "watch_next_type", "browsable", "poster_art_uri", "thumbnail_uri"};
+                        "duration_millis", "watch_next_type", "browsable", "poster_art_uri", "thumbnail_uri", "last_engagement_time_utc_millis", "_id"};
                 try (Cursor cursor = activity.getContentResolver().query(FEED, columns, null, null,
-                        "last_engagement_time_utc_millis DESC")) {
+                        "last_engagement_time_utc_millis DESC, _id DESC")) {
                     Set<String> seen = new HashSet<>();
                     Map<String, Integer> shared = new LinkedHashMap<>();
                     Map<String, Integer> omitted = new LinkedHashMap<>();
-                    Map<String, List<Item>> byApp = new LinkedHashMap<>();
+
                     if (cursor == null) error = "This TV does not provide a Continue watching feed. Open an app below.";
                     else while (cursor.moveToNext()) {
                         String owner = cursor.getString(0);
@@ -233,16 +255,13 @@ final class WatchNextShelf extends LinearLayout {
                             if (intent.resolveActivity(activity.getPackageManager()) == null) {
                                 count(omitted, pkg + ":unresolved-link"); continue;
                             }
-                            List<Item> appItems = byApp.get(pkg);
-                            if (appItems == null) { appItems = new ArrayList<>(); byApp.put(pkg, appItems); }
-                            if (appItems.size() < 10) appItems.add(new Item(title, service, intent, position,
-                                    duration, type, cursor.getString(7), cursor.getString(8)));
+                            items.add(new Item(title, service, intent, position,
+                                    duration, type, cursor.getString(7), cursor.getString(8),
+                                    pkg + ":" + cursor.getLong(10), cursor.getLong(9)));
                         } catch (Exception ignored) { count(omitted, pkg + ":invalid-or-missing-app"); }
                     }
-                    // Interleave apps so one prolific service cannot fill the entire shelf.
-                    for (int index = 0; index < 10 && items.size() < 30; index++)
-                        for (List<Item> appItems : byApp.values())
-                            if (index < appItems.size() && items.size() < 30) items.add(appItems.get(index));
+                    // Keep the provider's global engagement order; app interleaving hid newer titles.
+                    if (items.size() > 30) items.subList(30, items.size()).clear();
                     android.util.Log.i("OverlookWatchNext", "Shared rows by app: " + shared
                             + "; playable cards=" + items.size() + "; omitted=" + omitted);
                 } catch (SecurityException e) {
@@ -252,13 +271,16 @@ final class WatchNextShelf extends LinearLayout {
                 }
             }
             final String result = error;
+            StringBuilder state = new StringBuilder();
+            for (Item item : items) state.append(item.signature()).append('\n');
+            final String nextSnapshot = state.toString();
             activity.runOnUiThread(() -> {
                 if (!active || request != generation || activity.isFinishing()) return;
                 setLoading(false);
                 boolean refreshFocused = refreshButton.hasFocus();
-                int selected = -1;
+                String selected = null;
                 for (int i = 0; i < cards.getChildCount(); i++)
-                    if (cards.getChildAt(i).hasFocus()) selected = i;
+                    if (cards.getChildAt(i).hasFocus()) selected = (String) cards.getChildAt(i).getTag();
                 // Removing a focused card must not hand focus to a hidden app row.
                 setDescendantFocusability(FOCUS_BLOCK_DESCENDANTS);
                 cards.removeAllViews();
@@ -270,11 +292,23 @@ final class WatchNextShelf extends LinearLayout {
                 if (result == null) for (Item item : items) addCard(item);
                 setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
                 if (refreshFocused) refreshButton.requestFocus();
-                else if (selected >= 0) {
-                    if (cards.getChildCount() > 0)
-                        cards.getChildAt(Math.min(selected, cards.getChildCount() - 1)).requestFocus();
-                    else down.run();
+                else if (selected != null) {
+                    View target = cards.findViewWithTag(selected);
+                    if (target != null) target.requestFocus();
+                    else if (!focusContent()) refreshButton.requestFocus();
                 }
+                boolean changed = snapshot == null || !snapshot.equals(nextSnapshot);
+                if (result == null) snapshot = nextSnapshot;
+                android.util.Log.i("OverlookWatchNext", "Feed changed=" + changed
+                        + "; cards=" + items.size() + "; newest engagement="
+                        + (items.isEmpty() ? 0 : items.get(0).engagement));
+                if (manualRefresh && !pendingRefresh) {
+                    Toast.makeText(activity, result != null ? result : changed
+                            ? "Continue watching updated · " + items.size() + " titles"
+                            : "No changes shared by streaming apps. Checked just now.", Toast.LENGTH_LONG).show();
+                    manualRefresh = false;
+                }
+                if (pendingRefresh) { pendingRefresh = false; refresh(); }
             });
         }, "overlook-watch-next").start();
     }
@@ -286,6 +320,7 @@ final class WatchNextShelf extends LinearLayout {
     private void addCard(Item item) {
         LinearLayout card = new LinearLayout(activity);
         card.setOrientation(VERTICAL);
+        card.setTag(item.id);
         card.setPadding(px(9), px(7), px(9), px(7));
         FrameLayout imageBox = new FrameLayout(activity);
         GradientDrawable imageBackground = new GradientDrawable();
@@ -369,14 +404,19 @@ final class WatchNextShelf extends LinearLayout {
     }
 
     private static final class Item {
-        final String title, service, poster, thumbnail;
+        final String title, service, poster, thumbnail, id;
         final Intent intent;
-        final long position, duration;
+        final long position, duration, engagement;
         final int type;
-        Item(String title, String service, Intent intent, long position, long duration, int type, String poster, String thumbnail) {
+        Item(String title, String service, Intent intent, long position, long duration, int type, String poster, String thumbnail, String id, long engagement) {
             this.title = title; this.service = service; this.intent = intent;
             this.position = position; this.duration = duration; this.type = type;
             this.poster = poster; this.thumbnail = thumbnail;
+            this.id = id; this.engagement = engagement;
+        }
+        String signature() {
+            return id + "|" + title + "|" + intent.toUri(0) + "|" + position + "|" + duration
+                    + "|" + type + "|" + engagement + "|" + poster + "|" + thumbnail;
         }
     }
 }
