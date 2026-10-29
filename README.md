@@ -106,12 +106,12 @@ in from the right and back out when dismissed. It closes on another press or aft
 installing the APK, opt in with `sh overlay.sh <TV_IP> on`. This needs a one-time ADB log permission
 and the Overlook accessibility service.
 
-Starting with 1.6.7, a short press retains the info overlay and a held press requests Android's
-system recent-apps screen, where the system supplies task dismissal controls. It does not clear
-app data or force-stop packages. Xiaomi's bridge infers a hold from the vendor's down/repeat/up
-log sequence; physical-remote validation is still required. The system's phone-style Recents
-screen on this firmware has close controls, but their directional-remote accessibility is not yet
-verified. See [the Mi TV setup](devices/legacy/mi-tv.md#patchwall-time-and-weather-overlay-23-october-2026).
+Starting with 1.6.8, **hold PatchWall** for a modern remote-friendly recent-apps panel. Each
+app has **Clear app**, and the header has **Clear all**. These remove recent tasks while keeping
+app data. A small ADB-started Android 9 helper drives the system's real dismissal controls;
+restart that helper after a TV reboot. See [recent-apps setup and controls](docs/recent-apps.md).
+The short press still shows time/weather. See [the Mi TV setup](devices/legacy/mi-tv.md#patchwall-time-and-weather-overlay-23-october-2026)
+for the existing shortcut opt-in.
 
 ## Make it yours
 

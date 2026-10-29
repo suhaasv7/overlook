@@ -34,8 +34,11 @@ import android.widget.LinearLayout;
 import android.widget.TextClock;
 import android.widget.TextView;
 
-/** Global PatchWall shortcuts: short press shows information, hold opens system Recents. */
+/** Global PatchWall shortcuts: short press shows information, hold opens the remote-friendly recent-apps panel. */
 public final class InfoOverlayService extends AccessibilityService {
+    private static volatile InfoOverlayService instance;
+    private FrameLayout taskProgressView;
+    private final Runnable taskProgressTimeout = () -> showTaskProgress(false);
     private final Handler main = new Handler(Looper.getMainLooper());
     private WindowManager windows;
     private FrameLayout overlay;
@@ -73,6 +76,7 @@ public final class InfoOverlayService extends AccessibilityService {
 
     @Override protected void onServiceConnected() {
         connected = true;
+        instance = this;
         windows = (WindowManager) getSystemService(WINDOW_SERVICE);
         weather = new Weather(this, (temp, icon) -> {
             lastTemperature = temp;
@@ -198,10 +202,51 @@ public final class InfoOverlayService extends AccessibilityService {
     }
 
     private void showRecents() {
+        if (taskProgressView != null) return;
         hide();
-        if (!performGlobalAction(GLOBAL_ACTION_RECENTS))
-            android.widget.Toast.makeText(this, "Recent apps is unavailable on this TV.",
-                    android.widget.Toast.LENGTH_LONG).show();
+        Intent intent = new Intent(this, RecentAppsActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+    }
+
+    static void taskProgress(boolean visible) {
+        InfoOverlayService service = instance;
+        if (service != null) service.main.post(() -> service.showTaskProgress(visible));
+    }
+
+    private void showTaskProgress(boolean visible) {
+        main.removeCallbacks(taskProgressTimeout);
+        if (!visible) {
+            if (taskProgressView != null && windows != null) windows.removeView(taskProgressView);
+            taskProgressView = null;
+            return;
+        }
+        if (!connected || taskProgressView != null) return;
+        taskProgressView = new FrameLayout(this);
+        taskProgressView.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[] {0xFF182230, 0xFF0E141E, 0xFF080C12}));
+        LinearLayout words = new LinearLayout(this);
+        words.setOrientation(LinearLayout.VERTICAL); words.setGravity(Gravity.CENTER);
+        TextView title = new TextView(this);
+        title.setGravity(Gravity.CENTER);
+        title.setText("Clearing recent apps…"); title.setTextColor(android.graphics.Color.WHITE);
+        title.setTypeface(Typeface.createFromAsset(getAssets(), "fonts/Inter-SemiBold.ttf"));
+        title.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size(42));
+        words.addView(title);
+        TextView detail = new TextView(this);
+        detail.setGravity(Gravity.CENTER);
+        detail.setText("App data is kept."); detail.setTextColor(0xFFC4D0DF);
+        detail.setTypeface(Typeface.createFromAsset(getAssets(), "fonts/Inter-Regular.ttf"));
+        detail.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, size(26));
+        detail.setPadding(0, size(20), 0, 0); words.addView(detail);
+        taskProgressView.addView(words, new FrameLayout.LayoutParams(-1, -1));
+        WindowManager.LayoutParams position = new WindowManager.LayoutParams(-1, -1,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                        | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN, PixelFormat.TRANSLUCENT);
+        position.setTitle("Overlook recent-apps progress");
+        windows.addView(taskProgressView, position);
+        main.postDelayed(taskProgressTimeout, 30000);
     }
 
     private static boolean allowed(int key) {
@@ -224,6 +269,7 @@ public final class InfoOverlayService extends AccessibilityService {
     }
 
     private void toggle() {
+        if (taskProgressView != null) return;
         if (panel != null) { hide(); return; }
         if (windows == null) return;
         overlay = new FrameLayout(this);
@@ -341,6 +387,8 @@ public final class InfoOverlayService extends AccessibilityService {
     }
     @Override public void onDestroy() {
         connected = false;
+        if (instance == this) instance = null;
+        showTaskProgress(false);
         main.removeCallbacks(keyLongPress);
         restartBridge();
         getSharedPreferences("config", 0).unregisterOnSharedPreferenceChangeListener(configChanged);

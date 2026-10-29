@@ -130,3 +130,7 @@ V1 retains its original clock/date, app positions/sizes, controls, wallpaper tre
 ## Manual refresh (1.6.4)
 
 A compact text-only Refresh button sits 24 design pixels after the Continue watching heading. It uses 20px text, 42px height, 140px minimum width and a 10px corner radius. Resting background is translucent black; focus is white with dark text. Refreshing text replaces Refresh while a query runs. Focus order is apps → cards → Refresh → controls. Existing cards remain visible while loading. Actual TV query/focus behavior and screenshot were checked.
+
+## Recent-apps panel
+
+The global recent-apps panel extends the native visual system without changing either home layout. A quiet navy-to-black background (#182230, #0E141E, #080C12), Inter Regular/SemiBold, 96px side margins, 60px title and 26px supporting text establish hierarchy. App banners occupy 364×220px tiles with 16px corners and 36px column gaps. Each app has an explicit 64px-high Clear app button; Clear all sits at the upper right. Focus uses a white outline on artwork and a white fill/dark text on buttons. A full-screen progress state covers the native system handoff. Empty and offline states retain a clear back/retry action and appropriate remote instructions.

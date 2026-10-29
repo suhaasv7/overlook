@@ -42,3 +42,5 @@ Current native source, prior TV screenshots/runtime checks, shared thumbnails, a
 The user is away from the TV and uses a Tailscale ADB connection. After each installed UI change, capture the actual launcher screen (dismiss the screensaver using Home if needed), inspect it, and show the screenshot inline to the user. Do not substitute a screensaver capture for launcher evidence.
 
 Latest v1 direction: retain classic home styling and add only one quiet Continue watching row. Avoid the v2 dock or extra styling in v1. V2 remains available.
+
+Recent-apps direction: PatchWall hold opens a modern panel with directional-remote app selection, per-app Clear app controls and Clear all. An optional, local ADB-started helper uses actual Android 9 system dismissal controls and verifies task deletion. App data, Home, System UI and Tailscale remain protected. The helper must be restarted after a TV reboot. Short press retains the info overlay.
